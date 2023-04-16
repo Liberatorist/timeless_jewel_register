@@ -1,3 +1,4 @@
+import atexit
 import datetime
 import re
 import time
@@ -5,6 +6,7 @@ import sqlite3 as sl
 from typing import List
 
 import requests
+from apscheduler.schedulers.background import BackgroundScheduler
 
 headers = {
     'content-type': 'application/json',
@@ -141,6 +143,11 @@ def trade_fetch(jewels: List[Jewel]):
             break
     return prices
 
+def set_last_update():
+    con = sl.connect('jewels.db')
+    with con:
+        con.execute(f"UPDATE LAST_UPDATE SET time = '{datetime.datetime.utcnow()}' where id=0")
+
 
 def update_all_jewels():
     start_time = datetime.datetime.utcnow()
@@ -162,5 +169,16 @@ def update_all_jewels():
                 if price is not None:
                     sql_query = f'UPDATE JEWEL SET price = "{price}", last_queried = "{datetime.datetime.utcnow()}" WHERE seed={seed} AND type="{jewel_type}";'
                     con.execute(sql_query)
-
+    set_last_update()
     print(f"Finished updates at {datetime.datetime.utcnow()} after {(datetime.datetime.utcnow() - start_time).seconds}s")
+
+
+def initialize_scheduler():
+    scheduler = BackgroundScheduler()
+    scheduler.add_job(func=update_all_jewels, trigger="interval", minutes=10)
+    scheduler.start()
+    atexit.register(lambda: scheduler.shutdown())
+
+
+if __name__ == '__main__':
+    initialize_scheduler()

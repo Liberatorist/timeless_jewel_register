@@ -1,11 +1,8 @@
 from datetime import datetime
 import sqlite3 as sl
-
-import atexit
 from flask import Flask, render_template, send_file
-from apscheduler.schedulers.background import BackgroundScheduler
 
-from trade_crawler import update_all_jewels, Jewel
+from trade_crawler import Jewel, initialize_scheduler
 
 app = Flask(__name__)
 
@@ -17,15 +14,7 @@ class JewelOut:
         self.seed = seed
         self.url = f"https://www.pathofexile.com/trade/search/Crucible/{url_hash}"
         if last_queried:
-            diff = (datetime.utcnow() - datetime.strptime(last_queried, '%Y-%m-%d %H:%M:%S.%f')).seconds
-            if diff < 60:
-                self.last_queried = "<1 min ago"
-            elif diff < 60 * 60:
-                self.last_queried = f"{round(diff / 60)} min ago"
-            elif diff < 60 * 60 * 24:
-                self.last_queried = f"{round(diff / 60 / 60)} h ago"
-            else:
-                self.last_queried = f"{round(diff / 60 / 60 / 24)} d ago"
+            self.last_queried = get_human_readable_time_diff(last_queried)
 
         else:
             self.last_queried = "Never"
@@ -38,6 +27,25 @@ class JewelOut:
         self.ie = ie
         self.anoint = anoint
         self.price = price if price != "None" else ""
+
+
+def get_human_readable_time_diff(last_date):
+    diff = (datetime.utcnow() - datetime.strptime(last_date, '%Y-%m-%d %H:%M:%S.%f')).seconds
+    if (seconds := diff) < 60:
+        return f"{seconds} second{'s' if seconds > 1 else ''} ago"
+    elif (minutes := round(diff / 60)) < 60:
+        return f"{minutes} minute{'s' if minutes > 1 else ''} ago"
+    elif (hours := round(minutes / 60)) < 24:
+        return f"{hours} hour{'s' if hours > 1 else ''} ago"
+    days = round(hours / 24)
+    return f"{days} day{'s' if round(days) > 1 else ''} ago"
+
+
+def get_last_update():
+    con = sl.connect('jewels.db')
+    with con:
+        for update in con.execute("SELECT time FROM LAST_UPDATE"):
+            return get_human_readable_time_diff(update[0])
 
 
 def get_all_jewels():
@@ -59,20 +67,13 @@ def get_all_jewels():
 
 @app.route('/')
 def endpoint():
-    return render_template("basic_table.html", table=get_all_jewels())
+    return render_template("basic_table.html", table=get_all_jewels(), last_update=get_last_update())
+
 
 @app.route('/dump')
 def dump_db():
     return send_file('jewels.db', as_attachment=True)
 
 
-def initialize_scheduler():
-    scheduler = BackgroundScheduler()
-    scheduler.add_job(func=update_all_jewels, trigger="interval", minutes=10)
-    scheduler.start()
-    atexit.register(lambda: scheduler.shutdown())
-
-
 if __name__ == '__main__':
-    initialize_scheduler()
     app.run()
