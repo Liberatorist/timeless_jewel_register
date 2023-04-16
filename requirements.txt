@@ -3,4 +3,3 @@ flask
 apscheduler
 gunicorn
 Werkzeug
-sqlite3
