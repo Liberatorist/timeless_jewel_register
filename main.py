@@ -56,11 +56,11 @@ def get_all_jewels():
             jewel = Jewel(*jewel_data)
             base = [jewel.type, jewel.position, jewel.seed, jewel.effect, jewel.url_hash,
                     jewel.last_queried, jewel.price, jewel.points_to_jewel]
-            if jewel.points_base:
+            if jewel.points_base != "":
                 jewels.append(JewelOut(*base, jewel.points_base, False, False))
-            if jewel.points_w_ie:
+            if jewel.points_w_ie != "":
                 jewels.append(JewelOut(*base, jewel.points_w_ie, True, False))
-            if jewel.points_w_anoint:
+            if jewel.points_w_anoint != "":
                 jewels.append(JewelOut(*base, jewel.points_w_anoint, False, True))
     return jewels
 
