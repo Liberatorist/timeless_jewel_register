@@ -178,8 +178,3 @@ def initialize_scheduler():
     scheduler.add_job(func=update_all_jewels, trigger="interval", minutes=10)
     scheduler.start()
     atexit.register(lambda: scheduler.shutdown())
-
-
-if __name__ == '__main__':
-    while True:
-        update_all_jewels()
