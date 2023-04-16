@@ -181,4 +181,5 @@ def initialize_scheduler():
 
 
 if __name__ == '__main__':
-    initialize_scheduler()
+    while True:
+        update_all_jewels()
