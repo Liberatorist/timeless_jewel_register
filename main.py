@@ -2,7 +2,7 @@ from datetime import datetime
 import sqlite3 as sl
 
 import atexit
-from flask import Flask, render_template
+from flask import Flask, render_template, send_file
 from apscheduler.schedulers.background import BackgroundScheduler
 
 from trade_crawler import update_all_jewels, Jewel
@@ -60,6 +60,10 @@ def get_all_jewels():
 @app.route('/')
 def endpoint():
     return render_template("basic_table.html", table=get_all_jewels())
+
+@app.route('/dump')
+def dump_db():
+    return send_file('jewels.db', as_attachment=True)
 
 
 def initialize_scheduler():
