@@ -31,8 +31,8 @@ class JewelOut:
             self.last_queried = "Never"
 
         self.total_points = points_to_jewel + additional_points
-        if ie:
-            self.total_points += 3
+        # if ie:
+        #     self.total_points += 3
         self.effect = effect
         self.effect_pp = round(self.effect / self.total_points, 2)
         self.ie = ie
