@@ -75,8 +75,8 @@ def dump_db():
     return send_file('jewels.db', as_attachment=True)
 
 
-with app.app_context():
-    initialize_scheduler()
+# with app.app_context():
+#     initialize_scheduler()
 
 if __name__ == '__main__':
     app.run()
