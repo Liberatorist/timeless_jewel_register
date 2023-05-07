@@ -1,32 +1,39 @@
 from datetime import datetime
+import json
 import sqlite3 as sl
-from flask import Flask, render_template, send_file
+from flask import Flask, jsonify, render_template, request, send_file
 
-from trade_crawler import Jewel, initialize_scheduler
+from trade_crawler import Jewel, get_prices, initialize_scheduler
 
 app = Flask(__name__)
 
+with open("data/steiner_solutions.json", "r") as file:
+    steiner_solutions = json.loads(file.read())
 
-class JewelOut:
-    def __init__(self, type, position, seed, effect, url_hash, last_queried, price, points_to_jewel, additional_points, ie, anoint):
-        self.type = type
-        self.position = position
+with open("static/tree.json", "r") as file:
+    tree = json.loads(file.read())
+
+with open("data/jewel_slots.json", "r") as file:
+    jewel_slots = json.loads(file.read())
+
+ 
+def get_price(type, seed):
+    return None, datetime.utcnow()
+
+class Jewel:
+    def __init__(self, id, price, last_seen, seed, type, slot, effect, ie, anoint, cost, **kwargs):
+        self.id = id
         self.seed = seed
-        self.url = f"https://www.pathofexile.com/trade/search/Crucible/{url_hash}"
-        if last_queried:
-            self.last_queried = get_human_readable_time_diff(last_queried)
-
-        else:
-            self.last_queried = "Never"
-
-        self.total_points = points_to_jewel + additional_points
-        # if ie:
-        #     self.total_points += 3
+        self.type = type
+        self.position = slot
+        self.price = price
+        self.last_seen = last_seen
         self.effect = effect
-        self.effect_pp = round(self.effect / self.total_points, 2)
-        self.ie = ie
-        self.anoint = anoint
-        self.price = price if price != "None" else ""
+        self.ie = ie[0] if ie else None
+        self.anoint = True if anoint else False
+        self.point_cost = cost
+        self.effect_pp = round(effect/cost, 2)
+
 
 
 def get_human_readable_time_diff(last_date):
@@ -42,32 +49,45 @@ def get_human_readable_time_diff(last_date):
 
 
 def get_last_update():
-    con = sl.connect('jewels.db')
-    with con:
-        for update in con.execute("SELECT time FROM LAST_UPDATE"):
-            return get_human_readable_time_diff(update[0])
+    return get_human_readable_time_diff(str(datetime.utcnow()))
+    # con = sl.connect('jewels.db')
+    # with con:
+    #     for update in con.execute("SELECT time FROM LAST_UPDATE"):
+    #         return get_human_readable_time_diff(update[0])
 
 
 def get_all_jewels():
+    jewel_prices, ie_prices = get_prices()
     jewels = []
-    con = sl.connect('jewels.db')
-    with con:
-        for jewel_data in con.execute("SELECT * FROM JEWEL"):
-            jewel = Jewel(*jewel_data)
-            base = [jewel.type, jewel.position, jewel.seed, jewel.effect, jewel.url_hash,
-                    jewel.last_queried, jewel.price, jewel.points_to_jewel]
-            if jewel.points_base != "":
-                jewels.append(JewelOut(*base, jewel.points_base, False, False))
-            if jewel.points_w_ie != "":
-                jewels.append(JewelOut(*base, jewel.points_w_ie, True, False))
-            if jewel.points_w_anoint != "":
-                jewels.append(JewelOut(*base, jewel.points_w_anoint, False, True))
+    for id, solution in enumerate(steiner_solutions):
+        p = jewel_prices[(solution["type"], solution["seed"])]
+        price = p["price"] if p["price"] else ""
+        last_seen = p["last_seen"]
+        if solution["ie"] and price and ie_prices[solution["ie"][0]]["price"]:
+            price = price + ie_prices[solution["ie"][0]]["price"]
+        jewels.append(Jewel(id=id, price=price, last_seen=last_seen, **solution))
     return jewels
 
 
-@app.route('/')
+@app.route('/',methods = ['GET'])
 def endpoint():
     return render_template("basic_table.html", table=get_all_jewels(), last_update=get_last_update())
+
+ 
+@app.route('/',methods = ['POST'])
+def post():
+    solution = steiner_solutions[int(request.json["id"])]
+    return jsonify({
+        "jewel_id": jewel_slots[solution["type"]][solution["slot"]]["jewel_hash"],
+        "keystone_id": solution["ie"][0] if solution["ie"] else None,
+        "active_nodes": solution["steiner_tree"],
+        "important_nodes": solution["aura_nodes"]
+    })
+
+@app.route('/tree.json')
+def get_json():
+    return jsonify(tree)
+
 
 
 @app.route('/dump')
@@ -75,8 +95,8 @@ def dump_db():
     return send_file('jewels.db', as_attachment=True)
 
 
-# with app.app_context():
-#     initialize_scheduler()
+with app.app_context():
+    initialize_scheduler()
 
 if __name__ == '__main__':
     app.run()
