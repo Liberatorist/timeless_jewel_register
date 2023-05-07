@@ -1,6 +1,5 @@
 import json
 import subprocess
-from time import time
 
 
 class SteinerSolver:

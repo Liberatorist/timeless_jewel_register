@@ -161,7 +161,7 @@ def find_solution_without_anoint(jewel_type, jewel_id, slot, aura_nodes, effect_
         "slot": slot,
         "steiner_tree": steiner_tree_nodes,
         "aura_nodes": list(aura_nodes),
-        "cost": get_cost(steiner_tree_nodes, jewel_type, slot),
+        "cost": get_cost(steiner_tree_nodes, jewel_type, slot) - 1,
         "anoint": [],
         "ie": [],
     }
