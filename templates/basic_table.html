@@ -1,161 +1,100 @@
 {% extends "base.html" %}
 
-
 {% block content %}
-
-  <input type="search" id="min_effect" name="min_effect" placeholder="Min. Effect">
-  <input type="search" id="max_points" name="max_points" placeholder="Max. Passive Points">
-  <input type="search" id="max_price" name="max_price" placeholder="Max. Price">
-  <select id="position" name="position">
-        <option value="none" selected disabled hidden>Position</option>
-        <option value="Any"> Any </option>
-        <option value="Acrobatics"> Acrobatics </option>
-        <option value="Call to Arms"> Call to Arms </option>
-        <option value="Chaos Inoculation"> Chaos Inoculation </option>
-        <option value="Duelist"> Duelist </option>
-        <option value="Elemental Equilibrium"> Elemental Equilibrium </option>
-        <option value="Eternal Youth"> Eternal Youth </option>
-        <option value="Ghost Dance"> Ghost Dance </option>
-        <option value="Iron Will"> Iron Will </option>
-        <option value="Magebane"> Magebane </option>
-        <option value="Marauder"> Marauder </option>
-        <option value="Mind over Matter"> Mind over Matter </option>
-        <option value="Minion Instability"> Minion Instability </option>
-        <option value="Pain Attunement"> Pain Attunement </option>
-        <option value="Point Blank"> Point Blank </option>
-        <option value="Resolute Technique"> Resolute Technique </option>
-        <option value="Solipsism"> Solipsism </option>
-        <option value="Supreme Ego"> Supreme Ego </option>
-        <option value="The Agnostic"> The Agnostic </option>
-        <option value="Unwavering Stance"> Unwavering Stance </option>
-        <option value="Wind Dancer"> Wind Dancer </option>
-  </select>
-  <select id="jewel" name="jewel">
-        <option value="none" selected disabled hidden>Jewel Type</option>
-        <option value="Any">Any</option>
-        <option value="Militant Faith">Militant Faith</option>
-        <option value="Elegant Hubris">Elegant Hubris</option>
-        <option value="Glorious Vanity">Glorious Vanity</option>
-        <option value="Lethal Pride">Lethal Pride</option>
-        <option value="Brutal Restraint">Brutal Restraint</option>
-  </select>
-  <select id="ie" name="ie">
-        <option value="none" selected disabled hidden>Needs IE</option>
-        <option value="Any">Any</option>
-        <option value="True">True</option>
-        <option value="False">False</option>
-  </select>
-  <select id="anoint" name="anoint">
-        <option value="none" selected disabled hidden>Needs Anoint</option>
-        <option value="Any">Any</option>
-        <option value="True">True</option>
-        <option value="False">False</option>
-  </select>
-<br><br>
-
-
 <table id="data" class="table table-striped" style="width:100%">
-    <thead>
-      <tr>
-        <th>Jewel Type</th>
-        <th>Position</th>
-        <th>Seed</th>
-        <th>Aura Effect</th>
-        <th>Points to Allocate</th>
-        <th>Effect p.p.</th>
-        <th>Needs IE*</th>
-        <th>Needs Anoint</th>
-        <th>Price (div)</th>
-        <th></th>
+  <thead>
+    <tr>
+      <th>
+      </th><th>
+        <select id="jewel" name="jewel">
+              <option value="none" selected disabled hidden>Jewel Type</option>
+              <option value="none">Any</option>
+              <option value="0">Brutal Restraint</option>
+              <option value="1">Glorious Vanity</option>
+              <option value="2">Elegant Hubris</option>
+        </select>
+      </th><th>
+        <select id="position" name="position">
+            <option value="none" selected disabled hidden>Position</option>
+            <option value="Any"> Any </option>
+            <option value="Iron Will"> Iron Will </option>
+            <option value="Duelist"> Duelist </option>
+            <option value="Marauder"> Marauder </option>
+            <option value="Mind over Matter"> Mind over Matter </option>
+            <option value="Pain Attunement"> Pain Attunement </option>
+            <option value="Unwavering Stance"> Unwavering Stance </option>
+            <option value="Eternal Youth"> Eternal Youth </option>
+            <option value="Cluster (Zealot's Oath)"> Cluster (Zealot's Oath) </option>
+            <option value="Cluster (Call to Arms)"> Cluster (Call to Arms) </option>
+            <option value="Solipsism"> Solipsism </option>
+            <option value="Ghost Dance"> Ghost Dance </option>
+            <option value="Minion Instability"> Minion Instability </option>
+            <option value="Runebinder"> Runebinder </option>
+            <option value="Cluster (Divine Shield)"> Cluster (Divine Shield) </option>
+            <option value="Iron Grip"> Iron Grip </option>
+        </select>
+      </th><th>
+        <input type="search" id="seed" name="seed" placeholder="Seed">
+      </th><th>
+        <input type="search" id="min_effect" name="min_effect" placeholder="Min.">
+      </th><th>
+        <input type="search" id="max_points" name="max_points" placeholder="Max.">
+      </th><th>
+        <input type="search" id="min_effect_pp" name="min_effect_pp" placeholder="Min.">
+      </th><th>
+        <select id="requirements" name="requirements">
+              <option value="none" selected disabled hidden>Requirements</option>
+              <option value="none">Any</option>
+              <option value="no_ie">No IE</option>
+              <option value="no_anoint">No Anoint</option>
+              <option value="basic">No IE/Anoint</option>
+        </select>
+      </th><th>
+        <input type="search" id="max_price" name="max_price" placeholder="Max.">
+      </th><th>
+      </th><th>
+      </th>
       </tr>
     </thead>
     <tbody>
-      {% for jewel in table %}
+      {% for jewel in jewels %}
         <tr>
-          <td>{{ jewel.type }}</td>
-          <td>{{ jewel.position }}</td>
+          <td>       
+            <button onclick="buildTree(event,'{{ jewel.id }}')" style="height:20px;width:20px"></button>
+          </td>
+          <td><img src={{ image_map[jewel.type] }} width="30" height="30"><hidden style="display:none;">{{ jewel.type }}</hidden></td>
+          <td>{{ num2slot[jewel.position] }}</td>
           <td>{{ jewel.seed }}</td>
           <td>{{ jewel.effect }}</td>
-          <td>{{ jewel.total_points }}</td>
-          <td>{{ jewel.effect_pp }}</td>
-          <td>{{ jewel.ie }}</td>
-          <td>{{ jewel.anoint }}</td>
+          <td>{{ jewel.point_cost }}</td>
+          <td></td>
+          <td>
+            {% if jewel.ie %} <img src="static/Impossible_Escape_inventory_icon.png" width="30" height="30"><hidden style="display:none;">i</hidden> {% endif %}
+            {% if jewel.anoint %} <img src="static/Golden_Oil_inventory_icon.png" width="30" height="30"><hidden style="display:none;">a</hidden> {% endif %} 
+          </td>
           <td>{{ jewel.price }}</td>
-          <td><a href="{{ jewel.url }}" target="_blank"> Trade </a></td>
+          <td>{{ jewel.last_seen }}</td>
+          <td>   
+            <a href="javascript:buildTradeString({{ jewel.type }},{{ jewel.seed }},{{ jewel.ie }});"> Trade </a>
+          </td>
+
         </tr>
       {% endfor %}
     </tbody>
+      <tfoot>
+        <tr>
+          <th>Tree</th>
+          <th>Jewel Type</th>
+          <th>Position</th>
+          <th>Seed</th>
+          <th>Aura Effect</th>
+          <th>Points to Allocate</th>
+          <th>Effect p.p.</th>
+          <th>Requirements*</th>
+          <th>Price (div)</th>
+          <th>Last seen</th>
+          <th></th>
+        </tr>
+      </tfoot>
 </table>
-{% endblock %}
-
-{% block scripts %}
-  <script>
-    $(document).ready(function () {
-        var input_effect = $('#min_effect');
-        var input_effect_pp = $('#min_effect_pp');
-        var input_max_points = $('#max_points');
-        var input_max_price = $('#max_price');
-        var input_position = $('#position');
-        var input_jewel_type = $('#jewel');
-        var input_ie = $('#ie');
-        var input_anoint = $('#anoint');
-
-        // Custom range filtering function
-        $.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
-            var filter_min_effect = parseInt(input_effect.val(), 0);
-            var filter_min_effect_pp = parseFloat(input_effect_pp.val(), 0);
-            var filter_max_points = parseInt(input_max_points.val(), 0);
-            var filter_max_price = parseFloat(input_max_price.val(), 0);
-            var filter_position = String(input_position.val());
-            var filter_jewel_type = String(input_jewel_type.val());
-            var filter_ie = String(input_ie.val());
-            var filter_anoint = String(input_anoint.val());
-
-            var data_type = data[0] || NaN;
-            var data_position = data[1] || NaN;
-            var data_effect = parseFloat(data[3]) || 0;
-            var data_points = parseFloat(data[4]) || 0;
-            var data_effect_pp = parseFloat(data[5]) || 0;
-            var data_ie = data[6] || NaN;
-            var data_anoint = data[7] || NaN;
-            var data_price = parseFloat(data[8]) || 0;
-
-            if (data_effect < filter_min_effect){ return false; }
-            if (data_effect_pp < filter_min_effect_pp){ return false; }
-            if (data_points > filter_max_points){ return false; }
-            if (filter_position != "null" && filter_position != "Any" && data_position.toLowerCase().indexOf(filter_position.toLowerCase()) === -1 ){ return false; }
-            if (filter_jewel_type != "null" && filter_jewel_type != "Any" && data_type.toLowerCase().indexOf(filter_jewel_type.toLowerCase()) === -1 ){ return false; }
-            if (filter_ie != "null" && filter_ie != "Any" && (data_ie != filter_ie) ){ return false; }
-            if (filter_anoint != "null" && filter_anoint != "Any" && (data_anoint != filter_anoint) ){ return false; }
-            if (data_price > filter_max_price){ return false; }
-            return true;
-        })
-
-        var table = $('#data').DataTable({});
-        $('#data_filter').hide();
-        // Changes to the inputs will trigger a redraw to update the table
-        input_effect.on('input', function () {
-            table.draw();
-        });
-        input_max_points.on('input', function () {
-            table.draw();
-        });
-        input_position.on('input', function () {
-            table.draw();
-        });
-        input_jewel_type.on('input', function () {
-            table.draw();
-        });
-        input_ie.on('input', function () {
-            table.draw();
-        });
-        input_anoint.on('input', function () {
-            table.draw();
-        });
-        input_max_price.on('input', function () {
-            table.draw();
-        });
-    });
-  </script>
-
 {% endblock %}

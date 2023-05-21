@@ -1,0 +1,174 @@
+{
+    "Elegant Hubris": {
+        "Minion Instability" : {
+            "jewel_hash": 61419,
+            "anchors": [36678, 49605],
+            "normal_pathing_cost": 9
+        },
+        "Mind over Matter" : {
+            "jewel_hash": 36634,
+            "anchors": [36678, 10490],
+            "normal_pathing_cost": 7
+        },
+        "Pain Attunement" : {
+            "jewel_hash": 41263,
+            "anchors": [49605, 46092],
+            "normal_pathing_cost": 7
+        },
+        "Iron Will" : {
+            "jewel_hash": 6230,
+            "anchors": [55373],
+            "normal_pathing_cost": 0
+        },
+        "Iron Grip" : {
+            "jewel_hash": 31683,
+            "anchors": [48828],
+            "normal_pathing_cost": 0
+        },
+        
+        "Runebinder" : {
+            "jewel_hash": 26196,
+            "anchors": [64210],
+            "normal_pathing_cost": 1
+        },
+        "Marauder" : {
+            "jewel_hash": 26725,
+            "anchors": [14056, 34400, 29353],
+            "normal_pathing_cost": 9
+        },
+        "Duelist" : {
+            "jewel_hash": 54127,
+            "anchors": [50986, 14056],
+            "normal_pathing_cost": 8
+        },
+        "Eternal Youth" : {
+            "jewel_hash": 33631,
+            "anchors": [29353],
+            "normal_pathing_cost": 1
+        },
+        "Ghost Dance" : {
+            "jewel_hash": 61834,
+            "anchors": [60440],
+            "normal_pathing_cost": 1
+        },
+        "Unwavering Stance" : {
+            "jewel_hash": 28475,
+            "anchors": [50986, 14056],
+            "normal_pathing_cost": 8
+        },
+        "Cluster (Zealot's Oath)" : {
+            "jewel_hash": 7960,
+            "anchors": [49605, 64210],
+            "normal_pathing_cost": 11
+        },
+        "Cluster (Divine Shield)" : {
+            "jewel_hash": 55190,
+            "anchors": [26270],
+            "normal_pathing_cost": 1
+        },
+        "Cluster (Call to Arms)" : {
+            "jewel_hash": 2491,
+            "anchors": [14056],
+            "normal_pathing_cost": 1
+        }
+    },
+    "Glorious Vanity": {
+        "Minion Instability" : {
+            "jewel_hash": 61419,
+            "anchors": [36678, 49605],
+            "normal_pathing_cost": 9
+        },
+        "Mind over Matter" : {
+            "jewel_hash": 36634,
+            "anchors": [36678, 10490],
+            "normal_pathing_cost": 7
+        },
+        "Pain Attunement" : {
+            "jewel_hash": 41263,
+            "anchors": [49605, 46092],
+            "normal_pathing_cost": 7
+        },
+        "Iron Will" : {
+            "jewel_hash": 6230,
+            "anchors": [55373],
+            "normal_pathing_cost": 0
+        },
+        "Iron Grip" : {
+            "jewel_hash": 31683,
+            "anchors": [48828],
+            "normal_pathing_cost": 0
+        },
+        
+        "Runebinder" : {
+            "jewel_hash": 26196,
+            "anchors": [64210],
+            "normal_pathing_cost": 1
+        },
+        "Marauder" : {
+            "jewel_hash": 26725,
+            "anchors": [14056, 34400, 29353],
+            "normal_pathing_cost": 9
+        },
+        "Duelist" : {
+            "jewel_hash": 54127,
+            "anchors": [50986, 14056],
+            "normal_pathing_cost": 8
+        },
+        "Eternal Youth" : {
+            "jewel_hash": 33631,
+            "anchors": [29353],
+            "normal_pathing_cost": 1
+        },
+        "Ghost Dance" : {
+            "jewel_hash": 61834,
+            "anchors": [60440],
+            "normal_pathing_cost": 1
+        },
+        "Unwavering Stance" : {
+            "jewel_hash": 28475,
+            "anchors": [50986, 14056],
+            "normal_pathing_cost": 8
+        },
+        "Cluster (Zealot's Oath)" : {
+            "jewel_hash": 7960,
+            "anchors": [49605, 64210],
+            "normal_pathing_cost": 11
+        },
+        "Cluster (Divine Shield)" : {
+            "jewel_hash": 55190,
+            "anchors": [26270],
+            "normal_pathing_cost": 1
+        },
+        "Cluster (Call to Arms)" : {
+            "jewel_hash": 2491,
+            "anchors": [14056],
+            "normal_pathing_cost": 1
+        }
+    },
+    "Brutal Restraint": {
+        "Iron Will" : {
+            "jewel_hash": 6230,
+            "anchors": [55373, 15144, 48768, 51786, 44103, 65097, 21602, 45067, 22473, 10835, 56116],
+            "normal_pathing_cost": null,
+            "exact_cost": 4
+        },
+        "Iron Grip" : {
+            "jewel_hash": 31683,
+            "anchors": [48828, 15144, 48768, 51786, 44103, 65097, 21602, 45067, 22473, 10835],
+            "normal_pathing_cost": null,
+            "exact_cost": 4
+        },
+        "Solipsism" : {
+            "jewel_hash": 48768,
+            "anchors": [15144, 51786, 44103, 65097, 21602, 45067, 22473, 10835, 6534, 56116],
+            "normal_pathing_cost": null,
+            "exact_cost": 1
+        },
+        "Runebinder" : {
+            "jewel_hash": 26196,
+            "anchors": [64210, 35958, 11730, 27137],
+            "normal_pathing_cost": null,
+            "exact_cost": 2
+        }
+    }
+}
