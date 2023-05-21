@@ -1,5 +1,8 @@
+var tree = await fetch("./tree.json")
+  .then((res) => res.json());
 
-import tree from './tree.json' assert { type: 'json' };
+
+// import tree from './tree.json';
 var elem = document.getElementById('draw-shapes');
 var two = new Two({
   width: 400,
@@ -144,8 +147,9 @@ function draw_keystone_radius(keystone_id, jewel_id) {
 
   var shape = two.makeCircle(scaled_coordinates[0], scaled_coordinates[1], scale_val(960));
 
-  shape.noFill()
   shape.stroke = "black";
+  shape.fill = "#d9feff";
+
   shape.linewidth = 1;
 }
 
@@ -176,8 +180,7 @@ function draw_all(jewel_id, keystone_id, active_nodes, important_nodes) {
 }
 
 async function buildTree(e, id) {
-
-  const response = await fetch("/", {
+  const data = await fetch("/", {
     method: "POST",
     body: JSON.stringify({
       "id": id
@@ -185,24 +188,22 @@ async function buildTree(e, id) {
     headers: {
       "Content-type": "application/json; charset=UTF-8"
     }
-  });
-  const jsonData = await response.json();
-  draw_all(jsonData.jewel_id, jsonData.keystone_id, jsonData.active_nodes, jsonData.important_nodes);
-
-  var left = e.clientX + "px";
-  var top = e.clientY + "px";
+  })
+  .then(resp => resp.json());
+  draw_all(data.jewel_id, data.keystone_id, data.active_nodes, data.important_nodes);
+  
   var div = document.getElementById("draw-shapes");
-  div.style.left = left;
-  div.style.top = top;
+  div.style.left = e.clientX + "px";
+  div.style.top = Math.min(e.clientY, window.innerHeight - 400) + "px";
   $("#draw-shapes").toggle();
   $("#draw-shapes").attr("toggled", true)
 }
 
 function buildTradeString(jewel_type, seed, ie) {
   var variants = {
-    "Glorious Vanity": ["xibaqua", "doryani", "ahuana"],
-    "Brutal Restraint": ["asenath", "balbala", "nasima"],
-    "Elegant Hubris": ["cadiro", "caspiro", "victario"]
+    "0": ["asenath", "balbala", "nasima"],
+    "1": ["xibaqua", "doryani", "ahuana"],
+    "2": ["cadiro", "caspiro", "victario"]
   }
   var query = {
     "query": {
@@ -218,8 +219,7 @@ function buildTradeString(jewel_type, seed, ie) {
     },
     "sort": { "price": "asc" }
   }
-
-  if (ie!="None"){
+  if (ie != "0"){
     query["query"]["stats"][0]["filters"].push({"id": "explicit.stat_2422708892", "value": {"option": ie}})
   }
   window.open("https://www.pathofexile.com/trade/search/?q=" + encodeURIComponent(JSON.stringify(query)), '_blank');
@@ -238,3 +238,4 @@ $(function() {
     }
   });
 });
+

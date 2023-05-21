@@ -5,7 +5,7 @@ import json
 import math
 from time import time
 import zipfile
-from steiner_interface import SteinerSolver
+from steiner_solver.steiner_interface import SteinerSolver
 
 
 
@@ -27,14 +27,12 @@ with open("data/aura_nodes_by_seed.json", "r") as file:
     aura_nodes_by_seed = json.loads(file.read())
 
 
-
 class TimelessJewelType(Enum):
 	GLORIOUS_VANITY = 'Glorious Vanity'
 	LETHAL_PRIDE = 'Lethal Pride'
 	BRUTAL_RESTRAINT = 'Brutal Restraint'
 	MILITANT_FAITH = 'Militant Faith'
 	ELEGANT_HUBRIS = 'Elegant Hubris'
-
 
 seed_ranges = {
     TimelessJewelType.GLORIOUS_VANITY: range(100, 8001),
@@ -51,27 +49,6 @@ min_effect = {
     TimelessJewelType.MILITANT_FAITH: 16,
     TimelessJewelType.ELEGANT_HUBRIS: 24,
 }
-
-def get_effect(jewel_type, aura_nodes):
-
-
-    if jewel_type == TimelessJewelType.BRUTAL_RESTRAINT:
-        return len(aura_nodes) * 8
-    if jewel_type == TimelessJewelType.ELEGANT_HUBRIS:
-        return len(aura_nodes) * 12
-    # todo: glorious vanity
-    return None
-
-
-# def save_elegant_hubris_to_db(seed, passives, alt_passives):
-#     con = sqlite3.connect('timeless.db')
-#     sql = "INSERT INTO ACTIONS (JEWEL_TYPE, SEED, NODE_ID, ALT_PASSIVE_ID) VALUES(?, ?, ?, ?)"
-
-#     data = [(0, seed, p, ap[1]) for p, ap in zip(passives, alt_passives)]
-
-#     con.cursor().executemany(sql, data)
-#     con.commit()
-#     con.close()
 
 def get_timeless_node_mapping():
     data={}
@@ -150,8 +127,8 @@ def get_passives_in_radius_of_keystones():
 
 
 def get_cost(nodes, jewel_type, slot):
-    if jewel_slots[jewel_type.value][slot].get("exact_cost"):
-        return jewel_slots[jewel_type.value][slot].get("exact_cost")
+    if "exact_cost" in jewel_slots[jewel_type.value][slot]:
+        return jewel_slots[jewel_type.value][slot]["exact_cost"]
     else:
         return len(nodes) - jewel_slots[jewel_type.value][slot]['normal_pathing_cost']
 
@@ -161,7 +138,7 @@ def find_solution_without_anoint(jewel_type, jewel_id, slot, aura_nodes, effect_
         "slot": slot,
         "steiner_tree": steiner_tree_nodes,
         "aura_nodes": list(aura_nodes),
-        "cost": get_cost(steiner_tree_nodes, jewel_type, slot) - 1,
+        "cost": get_cost(steiner_tree_nodes, jewel_type, slot),
         "anoint": [],
         "ie": [],
     }
@@ -183,7 +160,7 @@ def find_solution_with_anoint(jewel_type, jewel_id, slot, aura_nodes, effect_val
         "slot": slot,
         "steiner_tree": steiner_tree_nodes,
         "aura_nodes": list(aura_nodes),
-        "cost": get_cost(steiner_tree_nodes, jewel_type, slot),
+        "cost": get_cost(steiner_tree_nodes, jewel_type, slot) - 1,
         "anoint": [node_to_anoint],
         "ie": [],
     }
@@ -269,24 +246,34 @@ def fetch_solutions():
         file.write(json.dumps(solutions, separators=(',', ':')))
     print(time()-t)
 
+
+def get_cutoff(solution):
+    if solution["cost"] != 0:
+        return (solution["effect"], solution["effect"]/solution["cost"])
+    else:
+        return (solution["effect"], 999)
+    
+
 def clean_up_data():
     with open("data/steiner_solutions.json", "r") as file:
         data = json.loads(file.read())
     data_dict = {}
 
     for solution in data:
-        if solution["effect"] / solution["cost"] <= 2.5:
-            continue
+        # if solution["effect"] / solution["cost"] <= 2:
+        #     continue
         key = (solution["type"],solution["seed"],solution["slot"])
         if key not in data_dict:
             data_dict[key] = []
         data_dict[key].append(solution)
     solutions = []
-    for k, v in data_dict.items():
-        cutoffs = [(s["effect"], s["effect"]/s["cost"]) for s in v if not (s["ie"] or s["anoint"])]
-        cutoffs_ie = [(s["effect"], s["effect"]/s["cost"]) for s in v if s["ie"]]
-        cutoffs_anoints = [(s["effect"], s["effect"]/s["cost"]) for s in v if s["anoint"]]
+    for v in data_dict.values():
+        cutoffs = [get_cutoff(s) for s in v if not (s["ie"] or s["anoint"])]
+        cutoffs_ie = [get_cutoff(s) for s in v if s["ie"]]
+        cutoffs_anoints = [get_cutoff(s) for s in v if s["anoint"]]
         for solution in v:
+            if solution["cost"] == 0:
+                print(solution)
             if solution["ie"]:
                 if any(solution["effect"] <= c[0] and solution["effect"]/solution["cost"] < c[1] for c in cutoffs_ie):
                     continue
@@ -299,16 +286,35 @@ def clean_up_data():
 
             solutions.append(solution)
 
-            
-    # for s in solutions:
-    #     print((s["type"],s["seed"],s["slot"], s["effect"], s["cost"], s["ie"], s["anoint"]))
+    with open("data/jewel_slots.json", "r") as file:
+        jewels = json.loads(file.read())
+
+    all_slots = set()
+    for v in jewels.values():
+        for slot_name in v.keys():
+            all_slots.add(slot_name)
+
+    keys = ["seed", "type", "effect", "slot", "active_nodes", "aura_nodes", "cost", "anoint", "ie"]
+    num2type = ["Brutal Restraint", "Glorious Vanity", "Elegant Hubris"]
+    type2num = {v:k for k,v in enumerate(num2type)}
+    num2slot = list(all_slots)
+    slot2num = {k: v for v, k in enumerate(num2slot)}
 
 
-    with open("data/steiner_solutions.json", "w") as file:
-        file.write(json.dumps(solutions, separators=(',', ':')))
+    compressed_solutions = {}
+    compressed_solutions["num2slot"] = num2slot
+    compressed_solutions["num2type"] = num2type
+    compressed_solutions["keys"] = keys
+    compressed_solutions["solutions"] = []
 
+    for s in solutions:
 
-
+        compressed_solutions["solutions"].append(
+            [s["seed"], type2num[s["type"]], s["effect"], slot2num[s["slot"]], s["steiner_tree"], s["aura_nodes"], s["cost"], s["anoint"][0] if s["anoint"] else 0,  s["ie"][0] if s["ie"] else 0]
+        )
+        
+    with open("data/compressed_solutions.json", "w") as file:
+        file.write(json.dumps(compressed_solutions, separators=(',', ':')))
 
 
 if __name__ == '__main__':

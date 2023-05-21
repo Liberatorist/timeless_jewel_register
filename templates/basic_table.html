@@ -1,95 +1,100 @@
 {% extends "base.html" %}
 
 {% block content %}
-
-  <input type="search" id="min_effect" name="min_effect" placeholder="Min. Effect">
-  <input type="search" id="max_points" name="max_points" placeholder="Max. Passive Points">
-  <input type="search" id="max_price" name="max_price" placeholder="Max. Price">
-  <select id="position" name="position">
-        <option value="none" selected disabled hidden>Position</option>
-        <option value="Any"> Any </option>
-        <option value="Solipsism"> Solipsism </option>
-        <option value="Ghost Dance"> Ghost Dance </option>
-        <option value="Runebinder"> Runebinder </option>
-        <option value="Duelist"> Duelist </option>
-        <option value="Minion Instability"> Minion Instability </option>
-        <option value="Marauder"> Marauder </option>
-        <option value="Pain Attunement"> Pain Attunement </option>
-        <option value="Eternal Youth"> Eternal Youth </option>
-        <option value="Unwavering Stance"> Unwavering Stance </option>
-        <option value="Mind over Matter"> Mind over Matter </option>
-        <option value="Iron Will"> Iron Will </option>
-        <option value="Iron Grip"> Iron Grip </option>
-        <option value="Cluster (Divine Shield)"> Cluster (Divine Shield) </option>
-        <option value="Cluster (Zealot's Oath)"> Cluster (Zealot's Oath) </option>
-        <option value="Cluster (Call to Arms)"> Cluster (Call to Arms) </option>
-  </select>
-  <select id="jewel" name="jewel">
-        <option value="none" selected disabled hidden>Jewel Type</option>
-        <option value="Any">Any</option>
-        <option value="Elegant Hubris">Elegant Hubris</option>
-        <option value="Glorious Vanity">Glorious Vanity</option>
-        <option value="Brutal Restraint">Brutal Restraint</option>
-  </select>
-  <select id="ie" name="ie">
-        <option value="none" selected disabled hidden>Needs IE</option>
-        <option value="Any">Any</option>
-        <option value="True">True</option>
-        <option value="False">False</option>
-  </select>
-  <select id="anoint" name="anoint">
-        <option value="none" selected disabled hidden>Needs Anoint</option>
-        <option value="Any">Any</option>
-        <option value="True">True</option>
-        <option value="False">False</option>
-  </select>
-<br><br>
-
-
 <table id="data" class="table table-striped" style="width:100%">
-    <thead>
-      <tr>
-        <th>Tree</th>
-        <th>Jewel Type</th>
-        <th>Position</th>
-        <th>Seed</th>
-        <th>Aura Effect</th>
-        <th>Points to Allocate</th>
-        <th>Effect p.p.</th>
-        <th>Needs IE*</th>
-        <th>Needs Anoint</th>
-        <th>Price (div)</th>
-        <th></th>
+  <thead>
+    <tr>
+      <th>
+      </th><th>
+        <select id="jewel" name="jewel">
+              <option value="none" selected disabled hidden>Jewel Type</option>
+              <option value="none">Any</option>
+              <option value="0">Brutal Restraint</option>
+              <option value="1">Glorious Vanity</option>
+              <option value="2">Elegant Hubris</option>
+        </select>
+      </th><th>
+        <select id="position" name="position">
+            <option value="none" selected disabled hidden>Position</option>
+            <option value="Any"> Any </option>
+            <option value="Iron Will"> Iron Will </option>
+            <option value="Duelist"> Duelist </option>
+            <option value="Marauder"> Marauder </option>
+            <option value="Mind over Matter"> Mind over Matter </option>
+            <option value="Pain Attunement"> Pain Attunement </option>
+            <option value="Unwavering Stance"> Unwavering Stance </option>
+            <option value="Eternal Youth"> Eternal Youth </option>
+            <option value="Cluster (Zealot's Oath)"> Cluster (Zealot's Oath) </option>
+            <option value="Cluster (Call to Arms)"> Cluster (Call to Arms) </option>
+            <option value="Solipsism"> Solipsism </option>
+            <option value="Ghost Dance"> Ghost Dance </option>
+            <option value="Minion Instability"> Minion Instability </option>
+            <option value="Runebinder"> Runebinder </option>
+            <option value="Cluster (Divine Shield)"> Cluster (Divine Shield) </option>
+            <option value="Iron Grip"> Iron Grip </option>
+        </select>
+      </th><th>
+        <input type="search" id="seed" name="seed" placeholder="Seed">
+      </th><th>
+        <input type="search" id="min_effect" name="min_effect" placeholder="Min.">
+      </th><th>
+        <input type="search" id="max_points" name="max_points" placeholder="Max.">
+      </th><th>
+        <input type="search" id="min_effect_pp" name="min_effect_pp" placeholder="Min.">
+      </th><th>
+        <select id="requirements" name="requirements">
+              <option value="none" selected disabled hidden>Requirements</option>
+              <option value="none">Any</option>
+              <option value="no_ie">No IE</option>
+              <option value="no_anoint">No Anoint</option>
+              <option value="basic">No IE/Anoint</option>
+        </select>
+      </th><th>
+        <input type="search" id="max_price" name="max_price" placeholder="Max.">
+      </th><th>
+      </th><th>
+      </th>
       </tr>
     </thead>
     <tbody>
-      {% for jewel in table %}
+      {% for jewel in jewels %}
         <tr>
           <td>       
             <button onclick="buildTree(event,'{{ jewel.id }}')" style="height:20px;width:20px"></button>
           </td>
-          <td>{{ jewel.type }}</td>
-          <td>{{ jewel.position }}</td>
+          <td><img src={{ image_map[jewel.type] }} width="30" height="30"><hidden style="display:none;">{{ jewel.type }}</hidden></td>
+          <td>{{ num2slot[jewel.position] }}</td>
           <td>{{ jewel.seed }}</td>
           <td>{{ jewel.effect }}</td>
           <td>{{ jewel.point_cost }}</td>
-          <td>{{ jewel.effect_pp }}</td>
+          <td></td>
           <td>
-            {% if jewel.ie is none %}
-            False
-            {% else %}
-            True
-            {% endif %}
+            {% if jewel.ie %} <img src="static/Impossible_Escape_inventory_icon.png" width="30" height="30"><hidden style="display:none;">i</hidden> {% endif %}
+            {% if jewel.anoint %} <img src="static/Golden_Oil_inventory_icon.png" width="30" height="30"><hidden style="display:none;">a</hidden> {% endif %} 
           </td>
-          <td>{{ jewel.anoint }}</td>
           <td>{{ jewel.price }}</td>
-          <td>       
-            <a href="javascript:buildTradeString('{{ jewel.type }}','{{ jewel.seed }}', '{{ jewel.ie }}');"> Trade </a>
+          <td>{{ jewel.last_seen }}</td>
+          <td>   
+            <a href="javascript:buildTradeString({{ jewel.type }},{{ jewel.seed }},{{ jewel.ie }});"> Trade </a>
           </td>
 
-          <!-- <td><a href="{{ jewel.url }}" target="_blank"> Trade </a></td> -->
         </tr>
       {% endfor %}
     </tbody>
+      <tfoot>
+        <tr>
+          <th>Tree</th>
+          <th>Jewel Type</th>
+          <th>Position</th>
+          <th>Seed</th>
+          <th>Aura Effect</th>
+          <th>Points to Allocate</th>
+          <th>Effect p.p.</th>
+          <th>Requirements*</th>
+          <th>Price (div)</th>
+          <th>Last seen</th>
+          <th></th>
+        </tr>
+      </tfoot>
 </table>
 {% endblock %}

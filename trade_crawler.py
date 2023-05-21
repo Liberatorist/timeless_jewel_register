@@ -40,19 +40,27 @@ def create_tables():
             PRIMARY KEY (keystone)
         )""")
 
+with open("data/compressed_solutions.json", "r") as file:
+    steiner_solutions = json.loads(file.read())
+    keys = steiner_solutions["keys"]
+    solutions = steiner_solutions["solutions"]
+    num2type = steiner_solutions["num2type"]
+    num2slot = steiner_solutions["num2slot"]
+    key_map = {v: idx for idx, v in enumerate(steiner_solutions["keys"])}
+    slot2num = {v: k for k, v in enumerate(steiner_solutions["num2slot"])}
+    solutions = [s for s in steiner_solutions["solutions"] if s[key_map["effect"]] / s[key_map["cost"]] >= 2.5]
+
+
 def fill_tables():
     con = connect_to_db()
-    with open("data/steiner_solutions.json", "r") as file:
-        solutions = json.loads(file.read())
     with open("data/skill_tree.json", "r") as file:
         tree = json.loads(file.read())["nodes"]
     keystones = set()
     jewels = set()
     for solution in solutions:
-        jewels.add((solution["type"], solution["seed"]))
-        if solution["ie"]:
-            keystones.add(solution["ie"][0])
-
+        jewels.add((num2type[solution[key_map["type"]]], solution[key_map["seed"]]))
+        if solution[key_map["ie"]]:
+            keystones.add(solution[key_map["ie"]])
     with con:
         con.executemany("""
             INSERT INTO JEWELS (type, seed)
@@ -113,7 +121,7 @@ versions = {
 
 def get_price_in_div(result):
     price_data = result["listing"]["price"]
-    div_price = 180
+    div_price = 220
     if price_data["currency"] == "chaos":
         return round(price_data["amount"] / div_price, 2)
     elif price_data["currency"] == "divine":
@@ -133,7 +141,7 @@ def wait_for_request(policies, current_states):
         request_limit, interval, _ = policy.split(':')
         current_hits = state.split(':')[0]
         if int(current_hits) >= int(request_limit) - 1:
-            # print(f"sleeping for {interval}s")
+            print(f"sleeping for {interval}s")
             time.sleep(int(interval))
             return
 
@@ -244,9 +252,9 @@ def update_all_jewels():
     with con:
         jewels = list(get_jewels())
         k = 12
-        seen_already = set()
         for jewels_subset in [jewels[n: n + k] for n in range(0, len(jewels), k)]:
-            post_response = trade_for_jewels(jewels_subset)
+            seen_already = set()
+            post_response = trade_for_jewels(jewels_subset)#
             for result in trade_fetch(post_response):
                 seed = re.findall('\d+', result["item"]["explicitMods"][0])[0]
                 jewel_type = result["item"]["name"]
@@ -259,7 +267,7 @@ def update_all_jewels():
                     sql_query = f'UPDATE JEWELS SET price = "{price}", last_seen = "{datetime.datetime.utcnow()}" WHERE seed={seed} AND type="{jewel_type}";'
                     con.execute(sql_query)
                     seen_already.add((seed, jewel_type))                
-                if len(seen_already) == len(jewels):
+                if len(seen_already) == len(jewels_subset):
                     break
 
     print(f"Finished jewel updates at {datetime.datetime.utcnow()} after {(datetime.datetime.utcnow() - start_time).seconds}s")
@@ -295,12 +303,17 @@ def update_all():
 
 def initialize_scheduler():
     scheduler = BackgroundScheduler()
-    scheduler.add_job(func=update_all, trigger="interval", minutes=30)
+    scheduler.add_job(func=update_all, trigger="interval", hours=24)
     scheduler.start()
     atexit.register(lambda: scheduler.shutdown())
 
 
 if __name__ == '__main__':
+    # con = connect_to_db()
+    # r = con.cursor().execute("SELECT * FROM JEWELS")
+    # for rr in r:
+    #     print(rr)
     update_all_jewels()
+    update_all_impossible_escapes()
     # create_tables()
     # fill_tables()

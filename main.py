@@ -1,14 +1,20 @@
 from datetime import datetime
 import json
-import sqlite3 as sl
 from flask import Flask, jsonify, render_template, request, send_file
 
 from trade_crawler import Jewel, get_prices, initialize_scheduler
 
 app = Flask(__name__)
 
-with open("data/steiner_solutions.json", "r") as file:
+with open("data/compressed_solutions.json", "r") as file:
     steiner_solutions = json.loads(file.read())
+    keys = steiner_solutions["keys"]
+    solutions = steiner_solutions["solutions"]
+    num2type = steiner_solutions["num2type"]
+    num2slot = steiner_solutions["num2slot"]
+    key_map = {v: idx for idx, v in enumerate(steiner_solutions["keys"])}
+    slot2num = {v: k for k, v in enumerate(steiner_solutions["num2slot"])}
+    solutions = [s for s in steiner_solutions["solutions"] if s[key_map["effect"]] / s[key_map["cost"]] >= 2.5]
 
 with open("static/tree.json", "r") as file:
     tree = json.loads(file.read())
@@ -20,68 +26,57 @@ with open("data/jewel_slots.json", "r") as file:
 def get_price(type, seed):
     return None, datetime.utcnow()
 
+
+image_map = ["static/Brutal_Restraint_inventory_icon.png","static/Glorious_Vanity_inventory_icon.png","static/Elegant_Hubris_inventory_icon.png"]
+
+
+slot2hash = {}
+for k, v in jewel_slots.items():
+    for kk, vv in v.items():
+        slot2hash[slot2num[kk]] = vv["jewel_hash"]
+
+
 class Jewel:
-    def __init__(self, id, price, last_seen, seed, type, slot, effect, ie, anoint, cost, **kwargs):
+    def __init__(self, id, values, price, last_seen):
         self.id = id
-        self.seed = seed
-        self.type = type
-        self.position = slot
+        self.seed = values[key_map["seed"]]
+        self.type = values[key_map["type"]]
+        self.position = values[key_map["slot"]]
         self.price = price
         self.last_seen = last_seen
-        self.effect = effect
-        self.ie = ie[0] if ie else None
-        self.anoint = True if anoint else False
-        self.point_cost = cost
-        self.effect_pp = round(effect/cost, 2)
+        self.effect = values[key_map["effect"]]
+        self.ie = values[key_map["ie"]]
+        self.anoint = 1 if values[key_map["anoint"]]>0 else 0
+        self.point_cost = values[key_map["cost"]]
 
-
-
-def get_human_readable_time_diff(last_date):
-    diff = (datetime.utcnow() - datetime.strptime(last_date, '%Y-%m-%d %H:%M:%S.%f')).seconds
-    if (seconds := diff) < 60:
-        return f"{seconds} second{'s' if seconds > 1 else ''} ago"
-    elif (minutes := round(diff / 60)) < 60:
-        return f"{minutes} minute{'s' if minutes > 1 else ''} ago"
-    elif (hours := round(minutes / 60)) < 24:
-        return f"{hours} hour{'s' if hours > 1 else ''} ago"
-    days = round(hours / 24)
-    return f"{days} day{'s' if round(days) > 1 else ''} ago"
-
-
-def get_last_update():
-    return get_human_readable_time_diff(str(datetime.utcnow()))
-    # con = sl.connect('jewels.db')
-    # with con:
-    #     for update in con.execute("SELECT time FROM LAST_UPDATE"):
-    #         return get_human_readable_time_diff(update[0])
 
 
 def get_all_jewels():
     jewel_prices, ie_prices = get_prices()
     jewels = []
-    for id, solution in enumerate(steiner_solutions):
-        p = jewel_prices[(solution["type"], solution["seed"])]
+    for id, s in enumerate(solutions):
+        p = jewel_prices[(num2type[s[key_map["type"]]], s[key_map["seed"]])]
         price = p["price"] if p["price"] else ""
         last_seen = p["last_seen"]
-        if solution["ie"] and price and ie_prices[solution["ie"][0]]["price"]:
-            price = price + ie_prices[solution["ie"][0]]["price"]
-        jewels.append(Jewel(id=id, price=price, last_seen=last_seen, **solution))
+        if s[key_map["ie"]] and price and ie_prices[s[key_map["ie"]]]["price"]:
+            price = price + ie_prices[s[key_map["ie"]]]["price"]
+        jewels.append(Jewel(id=id, price=price, last_seen=last_seen, values=s))
     return jewels
 
 
 @app.route('/',methods = ['GET'])
 def endpoint():
-    return render_template("basic_table.html", table=get_all_jewels(), last_update=get_last_update())
+    return render_template("basic_table.html", jewels=get_all_jewels(), num2slot=num2slot, image_map=image_map)
 
  
 @app.route('/',methods = ['POST'])
 def post():
-    solution = steiner_solutions[int(request.json["id"])]
+    solution = solutions[int(request.json["id"])]
     return jsonify({
-        "jewel_id": jewel_slots[solution["type"]][solution["slot"]]["jewel_hash"],
-        "keystone_id": solution["ie"][0] if solution["ie"] else None,
-        "active_nodes": solution["steiner_tree"],
-        "important_nodes": solution["aura_nodes"]
+        "jewel_id": slot2hash[solution[key_map["slot"]]],
+        "keystone_id": solution[key_map["ie"]] if solution[key_map["ie"]] else None,
+        "active_nodes": solution[key_map["active_nodes"]],
+        "important_nodes": solution[key_map["aura_nodes"]]
     })
 
 @app.route('/tree.json')
@@ -92,7 +87,7 @@ def get_json():
 
 @app.route('/dump')
 def dump_db():
-    return send_file('jewels.db', as_attachment=True)
+    return send_file('trade.db', as_attachment=True)
 
 
 with app.app_context():

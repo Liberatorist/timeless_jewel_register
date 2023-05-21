@@ -1,0 +1,16 @@
+input {
+  width:120%;
+  height: 30px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+}
+select {
+  width:120%;
+  height: 30px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+}
