@@ -3,9 +3,133 @@ const time_formatter = new Intl.RelativeTimeFormat('en', {
     style: 'long',
     localeMatcher: 'best fit'
 });
+
 const currentDate = new Date(Date.now());
 
+function time_diff(timestamp){
+    const minutes = (new Date(timestamp + ":00.000000Z") - currentDate) / 60000
+    if (Math.abs(minutes) < 60){
+        return time_formatter.format(Math.round(minutes), 'minute');
+    }
+    const hours = minutes / 60
+    if (Math.abs(hours) < 24){
+        return time_formatter.format(Math.round(hours), 'hour')
+    }
+    const days = hours / 24
+    return  time_formatter.format(Math.round(days), 'day');
+
+}
+var solutions = await fetch("./solutions.json")
+    .then((res) => res.json());
+var prices = await fetch("./prices.json")
+    .then((res) => res.json());
+
+
+var keystone_map = {'58556': 'Divine Shield', '31961': 'Resolute Technique', '19732': 'The Agnostic', '41970': 'Ancestral Bond', '57279': 'Blood Magic', '63425': "Zealot's Oath", '39713': 'Glancing Blows', '44941': 'Avatar of Fire', '42343': 'Runebinder', '23090': 'Call to Arms', '24720': 'Imbalanced Guard', '21650': 'Eternal Youth', '22088': 'Elemental Overload', '34098': 'Mind Over Matter', '57257': 'The Impaler', '40907': 'Unwavering Stance', '17818': 'Crimson Dance', '50288': 'Iron Will', '10661': 'Iron Reflexes', '12926': 'Iron Grip', '45175': 'Necromantic Aegis', '60247': 'Solipsism', '56116': 'Magebane', '43988': 'Hex Master', '18663': 'Minion Instability', '50679': 'Versatile Combatant', '23540': 'Conduit', '10808': 'Vaal Pact', '23950': 'Wicked Ward', '39085': 'Elemental Equilibrium', '31703': 'Pain Attunement', '56075': 'Eldritch Battery', '49639': 'Supreme Ego', '63620': 'Precise Technique', '42178': 'Point Blank', '11239': 'Wind Dancer', '11455': 'Chaos Inoculation', '62791': 'Lethe Shade', '54922': 'Arrow Dancing', '35255': 'Ghost Dance', '24426': 'Ghost Reaver', '23407': 'Perfect Agony', '54307': 'Acrobatics', '12953': 'Disciple of Kitava', '3354': 'Lone Messenger', '30847': "Nature's Patience", '57280': 'Secrets of Suffering', '40561': 'Kineticism', '32118': "Veteran's Awareness", '60069': 'Hollow Palm Technique', '37081': 'Pitfighter'}
+var num2slot = ["Minion Instability","Duelist","Runebinder","Eternal Youth","Iron Will","Ghost Dance","Unwavering Stance","Iron Grip","Pain Attunement","Cluster (Call to Arms)","Cluster (Zealot's Oath)","Cluster (Divine Shield)","Mind over Matter","Marauder","Solipsism"];
+var key2num = {"seed": 0,"type": 1,"effect": 2,"slot": 3,"active_nodes": 4,"aura_nodes": 5, "cost": 6, "anoint": 7, "ie": 8};
+var jewel_image_map = ["static/Brutal_Restraint_inventory_icon.png","static/Glorious_Vanity_inventory_icon.png","static/Elegant_Hubris_inventory_icon.png"]
+var jewel_map = ["Brutal Restraint","Glorious Vanity","Elegant Hubris"]
+
+
+
 $(document).ready(function () {
+    var table = $('#data').DataTable({
+        data: solutions,
+        columns: [ 
+            { title: 'Tree' },
+            { title: 'Jewel Type' },
+            { title: 'Position' },
+            { title: 'Seed' },
+            { title: 'Aura Effect' },
+            { title: 'Points to Allocate' },
+            { title: 'Effect p.p.' },
+            { title: 'Requirements' },
+            { title: 'Price (div)' },
+            { title: '' },
+        ],
+        columnDefs: [
+            {   
+                render: function (data, type, row, meta) {
+                    return '<button onclick="buildTree(event,' + meta.row + ')" style="height:30px;width:30px"></button>';
+                },
+                orderable: false,
+                targets:0
+            },
+            {   
+                render: function (data, type, row) {
+                    return '<img title="' + jewel_map[row[key2num["type"]]] + '" src=' + jewel_image_map[row[key2num["type"]]] + ' width="30" height="30"><hidden style="display:none;">' + row[key2num["type"]] + '</hidden>'
+                },
+                targets:1
+            },
+            {   
+                render: function (data, type, row) {
+                    return num2slot[row[key2num["slot"]]];
+                },
+                targets:2
+            },
+            {   
+                render: function (data, type, row) {
+                    return row[key2num["seed"]];
+                },
+                targets:3
+            },
+            {   
+                render: function (data, type, row) {
+                    return row[key2num["effect"]];
+                },
+                targets:4
+            },
+            {   
+                render: function (data, type, row) {
+                    return row[key2num["cost"]];
+                },
+                targets:5
+            },
+            {   
+                render: function (data, type, row) {
+                    var div = parseFloat(row[key2num["effect"]]) / parseFloat(row[key2num["cost"]]);
+                    return Math.round(div * 100) / 100;
+                },
+                targets:6
+            },
+            {   
+                render: function (data, type, row) {
+                    if (row[key2num["ie"]] != ""){
+                        return '<img title="Impossible Escape at &quot;' + keystone_map[row[key2num["ie"]]] + '&quot;" src="static/Impossible_Escape_inventory_icon.png" width="30" height="30"><hidden style="display:none;">i</hidden>'
+                    }
+                    if (row[key2num["anoint"]] != ""){
+                        return '<img src="static/Golden_Oil_inventory_icon.png" width="30" height="30"><hidden style="display:none;">a</hidden>'
+                    }
+                    return "";
+                },
+                targets: 7         
+            },
+            {   
+                render: function (data, type, row) {
+                    var price = prices["timeless"][row[key2num["type"]]][row[key2num["seed"]]][0];
+
+                    if (!price){return ""}
+                    if (row[key2num["ie"]] != ""){
+                        price += prices["ie"][row[key2num["ie"]]][0];
+                    }
+                    var last_seen = prices["timeless"][row[key2num["type"]]][row[key2num["seed"]]][1];
+                    return '<span title="Last seen ' + time_diff(last_seen) + '"> ' + Math.round(parseFloat(price) * 100) / 100 + '</span>';
+                },
+                targets: 8
+            },
+            {   
+                render: function (data, type, row) {
+                    return '<a href="javascript:buildTradeString(' + row[key2num["type"]] + ',' + row[key2num["seed"]] + ',' + row[key2num["ie"]] +');"> Trade </a>';
+                },
+                orderable: false,
+                targets: 9
+            }            
+        ]
+
+    });
+    $('#data tfoot tr').appendTo('#data thead');
+
     var input_effect = $('#min_effect');
     var input_effect_pp = $('#min_effect_pp');
     var input_max_points = $('#max_points');
@@ -47,56 +171,10 @@ $(document).ready(function () {
         if (data_price > filter_max_price){ return false; }
         return true;
     })
-    
-    
     $('#divide').on('change', function () {
         table.rows().invalidate('data');
         table.draw(false);
     });
-
-
-    var table = $('#data').DataTable({
-        retrieve: true,
-        columnDefs: [
-            {   
-                render: function (data, type, row) {
-                    var div = parseFloat(row[4]) / parseFloat(row[5]);
-                    return Math.round(div * 100) / 100;
-                },
-                targets:6
-            },
-            {   
-                render: function (data, type, row) {
-                    if (row[8] ==""){return ""}
-                    return Math.round(parseFloat(row[8]) * 100) / 100;
-                },
-                targets:8
-            },
-            {   
-                render: function (data, type, row) {
-                    if (row[9] ==""){return "never"}
-                    
-                    const last_update = new Date(row[9] + "Z");
-                    const minutes = (last_update - currentDate) / 60000
-                    if (Math.abs(minutes) < 60){
-                        return time_formatter.format(Math.round(minutes), 'minute');
-                    }
-                    const hours = minutes / 60
-                    if (Math.abs(hours) < 24){
-                        return time_formatter.format(Math.round(hours), 'hour')
-                    }
-                    const days = hours / 24
-                    return  time_formatter.format(Math.round(days), 'day');
-                },
-                targets:9
-            },
-            {orderable: false, targets: 10},
-            {orderable: false, targets: 0},
-            
-        ]
-    
-    });
-
     $('#data_filter').hide();
     // Changes to the inputs will trigger a redraw to update the table
     input_effect.on('input', function () {
@@ -123,6 +201,5 @@ $(document).ready(function () {
     input_seed.on('input', function () {
         table.draw();
     });
-});
 
-$('#data tfoot tr').appendTo('#data thead');
+});

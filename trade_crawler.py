@@ -1,5 +1,6 @@
 import atexit
-import datetime
+from collections import defaultdict
+from datetime import datetime
 import json
 import re
 import time
@@ -26,7 +27,7 @@ def create_tables():
         con.execute("""
         CREATE TABLE JEWELS (
             seed INTEGER,
-            type TEXT,
+            type INTEGER,
             last_seen TEXT,
             price REAL,
             PRIMARY KEY (seed, type)
@@ -45,6 +46,7 @@ with open("data/compressed_solutions.json", "r") as file:
     keys = steiner_solutions["keys"]
     solutions = steiner_solutions["solutions"]
     num2type = steiner_solutions["num2type"]
+    type2num = {t: idx for idx, t in enumerate(num2type)}
     num2slot = steiner_solutions["num2slot"]
     key_map = {v: idx for idx, v in enumerate(steiner_solutions["keys"])}
     slot2num = {v: k for k, v in enumerate(steiner_solutions["num2slot"])}
@@ -58,7 +60,7 @@ def fill_tables():
     keystones = set()
     jewels = set()
     for solution in solutions:
-        jewels.add((num2type[solution[key_map["type"]]], solution[key_map["seed"]]))
+        jewels.add((solution[key_map["type"]], solution[key_map["seed"]]))
         if solution[key_map["ie"]]:
             keystones.add(solution[key_map["ie"]])
     with con:
@@ -93,22 +95,30 @@ def get_impossible_escapes():
 
 
 def get_prices():
-    jewel_prices = {(jewel.type, jewel.seed): {"price": jewel.price, "last_seen": jewel.last_seen} for jewel in get_jewels()}
-    ie_prices = {ie.keystone: {"price": ie.price, "last_seen": ie.last_seen} for ie in get_impossible_escapes()}
-    return jewel_prices, ie_prices
+    con = connect_to_db()
+    prices = {"timeless": defaultdict(dict), "ie": defaultdict(dict)}
+    with con:
+        jewels = con.execute("SELECT * FROM JEWELS ORDER BY price")
+        for jewel in jewels:
+            prices["timeless"][jewel[1]][jewel[0]] = [jewel[3], jewel[2]]
+        impossible_escapes = con.execute("SELECT * FROM IMPOSSIBLE_ESCAPES ORDER BY price")
+        for ie in impossible_escapes:
+            prices["ie"][ie[0]] = [ie[3], ie[2]]
+
+    return prices
 
 class Jewel:
     def __init__(self, seed, type, last_seen, price):
         self.seed = seed
-        self.type = type
-        self.last_seen = datetime.datetime.strptime(last_seen, '%Y-%m-%d %H:%M:%S.%f') if last_seen else None
+        self.type = num2type[type]
+        self.last_seen = datetime.strptime(last_seen, '%Y-%m-%d %H:%M') if last_seen else None
         self.price = float(price) if (price is not None and price != "None") else None
 
 class ImpossibleEscape:
     def __init__(self, keystone, name, last_seen, price):
         self.keystone = keystone
         self.name = name
-        self.last_seen = datetime.datetime.strptime(last_seen, '%Y-%m-%d %H:%M:%S.%f') if last_seen else None
+        self.last_seen = datetime.strptime(last_seen, '%Y-%m-%d %H:%M:%S.%f') if last_seen else None
         self.price = float(price) if (price is not None and price != "None") else None
 
 
@@ -133,6 +143,10 @@ current_states_post = ""
 policies_get = '12:4:60,16:12:60'
 policies_post = '8:10:60,15:60:120,60:300:1800'
 
+
+
+def now():
+    return datetime.utcnow().strftime("%Y-%m-%d %H:%M")
 
 def wait_for_request(policies, current_states):
     if not current_states:
@@ -246,7 +260,7 @@ def trade_fetch(post_response):
 
 
 def update_all_jewels():
-    start_time = datetime.datetime.utcnow()
+    start_time = datetime.utcnow()
     print(f"Starting jewel update at {start_time}")
     con = connect_to_db()
     with con:
@@ -257,23 +271,24 @@ def update_all_jewels():
             post_response = trade_for_jewels(jewels_subset)#
             for result in trade_fetch(post_response):
                 seed = re.findall('\d+', result["item"]["explicitMods"][0])[0]
-                jewel_type = result["item"]["name"]
+                jewel_type = type2num[result["item"]["name"]]
+
                 if (seed, jewel_type) in seen_already:
                     continue
                 else:
                     price = get_price_in_div(result)
                     if price is None:
                         continue
-                    sql_query = f'UPDATE JEWELS SET price = "{price}", last_seen = "{datetime.datetime.utcnow()}" WHERE seed={seed} AND type="{jewel_type}";'
+                    sql_query = f'UPDATE JEWELS SET price = "{price}", last_seen = "{now()}" WHERE seed={seed} AND type={jewel_type};'
                     con.execute(sql_query)
-                    seen_already.add((seed, jewel_type))                
+                    seen_already.add((seed, jewel_type))       
                 if len(seen_already) == len(jewels_subset):
                     break
 
-    print(f"Finished jewel updates at {datetime.datetime.utcnow()} after {(datetime.datetime.utcnow() - start_time).seconds}s")
+    print(f"Finished jewel updates at {datetime.utcnow()} after {(datetime.utcnow() - start_time).seconds}s")
 
 def update_all_impossible_escapes():
-    start_time = datetime.datetime.utcnow()
+    start_time = datetime.utcnow()
     print(f"Starting IE update at {start_time}")
     con = connect_to_db()
     with con:
@@ -290,12 +305,12 @@ def update_all_impossible_escapes():
                     price = get_price_in_div(result)
                     if price is None:
                         continue
-                    sql_query = f'UPDATE impossible_escapes SET price = "{price}", last_seen = "{datetime.datetime.utcnow()}" WHERE name = "{keystone}";'
+                    sql_query = f'UPDATE impossible_escapes SET price = "{price}", last_seen = "{now()}" WHERE name = "{keystone}";'
                     con.execute(sql_query)
                     seen_already.add(keystone)
                 if len(seen_already) == len(impossible_escapes_subset):
                     break
-    print(f"Finished IE updates at {datetime.datetime.utcnow()} after {(datetime.datetime.utcnow() - start_time).seconds}s")
+    print(f"Finished IE updates at {datetime.utcnow()} after {(datetime.utcnow() - start_time).seconds}s")
 
 def update_all():
     update_all_jewels()
@@ -312,8 +327,10 @@ if __name__ == '__main__':
     # con = connect_to_db()
     # r = con.cursor().execute("SELECT * FROM JEWELS")
     # for rr in r:
-    #     print(rr)
+    # #     print(rr)
     update_all_jewels()
     update_all_impossible_escapes()
     # create_tables()
     # fill_tables()
+    # x = get_prices()
+    # print(x["timeless"])
