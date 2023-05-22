@@ -2,7 +2,7 @@
 
 {% block content %}
 <table id="data" class="table table-striped" style="width:100%">
-  <thead>
+  <tfoot>
     <tr>
       <th>
       </th><th>
@@ -39,7 +39,8 @@
         <input type="search" id="min_effect" name="min_effect" placeholder="Min.">
       </th><th>
         <input type="search" id="max_points" name="max_points" placeholder="Max.">
-      </th><th>
+      </th>
+      <th>
         <input type="search" id="min_effect_pp" name="min_effect_pp" placeholder="Min.">
       </th><th>
         <select id="requirements" name="requirements">
@@ -52,49 +53,8 @@
       </th><th>
         <input type="search" id="max_price" name="max_price" placeholder="Max.">
       </th><th>
-      </th><th>
       </th>
       </tr>
-    </thead>
-    <tbody>
-      {% for jewel in jewels %}
-        <tr>
-          <td>       
-            <button onclick="buildTree(event,'{{ jewel.id }}')" style="height:20px;width:20px"></button>
-          </td>
-          <td><img src={{ image_map[jewel.type] }} width="30" height="30"><hidden style="display:none;">{{ jewel.type }}</hidden></td>
-          <td>{{ num2slot[jewel.position] }}</td>
-          <td>{{ jewel.seed }}</td>
-          <td>{{ jewel.effect }}</td>
-          <td>{{ jewel.point_cost }}</td>
-          <td></td>
-          <td>
-            {% if jewel.ie %} <img src="static/Impossible_Escape_inventory_icon.png" width="30" height="30"><hidden style="display:none;">i</hidden> {% endif %}
-            {% if jewel.anoint %} <img src="static/Golden_Oil_inventory_icon.png" width="30" height="30"><hidden style="display:none;">a</hidden> {% endif %} 
-          </td>
-          <td>{{ jewel.price }}</td>
-          <td>{{ jewel.last_seen }}</td>
-          <td>   
-            <a href="javascript:buildTradeString({{ jewel.type }},{{ jewel.seed }},{{ jewel.ie }});"> Trade </a>
-          </td>
-
-        </tr>
-      {% endfor %}
-    </tbody>
-      <tfoot>
-        <tr>
-          <th>Tree</th>
-          <th>Jewel Type</th>
-          <th>Position</th>
-          <th>Seed</th>
-          <th>Aura Effect</th>
-          <th>Points to Allocate</th>
-          <th>Effect p.p.</th>
-          <th>Requirements*</th>
-          <th>Price (div)</th>
-          <th>Last seen</th>
-          <th></th>
-        </tr>
-      </tfoot>
+    </tfoot>
 </table>
 {% endblock %}
