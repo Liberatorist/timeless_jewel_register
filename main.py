@@ -1,8 +1,7 @@
-from datetime import datetime
+import hashlib
 import json
 from flask import Flask, jsonify, render_template, request, send_file
-
-from trade_crawler import Jewel, get_prices, initialize_scheduler
+from database import Jewel, get_prices, update_db
 
 app = Flask(__name__)
 
@@ -80,6 +79,7 @@ def get_json():
 
 @app.route('/solutions.json')
 def get_solutions():
+    print(solutions)
     return solutions
 
 @app.route('/prices.json')
@@ -91,9 +91,19 @@ def get_price():
 def dump_db():
     return send_file('trade.db', as_attachment=True)
 
+@app.route('/upload', methods=["POST"])
+def upload():
+    data = request.json
+    if verify_data(data):
+        data.pop("pw")
+        update_db(data)
+        return "Successful Upload"
+    return "Could not verify upload"
 
-with app.app_context():
-    initialize_scheduler()
+def verify_data(data):
+    m = hashlib.sha512(data["pw"].encode('UTF-8')).hexdigest()
+    return m == "3dd28c5a23f780659d83dd99981e2dcb82bd4c4bdc8d97a7da50ae84c7a7229a6dc0ae8ae4748640a4cc07ccc2d55dbdc023a99b3ef72bc6ce49e30b84253dae"
+
 
 if __name__ == '__main__':
     app.run()
