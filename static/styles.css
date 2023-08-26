@@ -1,13 +1,14 @@
-input {
-  width:120%;
+
+select {
+  width:100%;
   height: 30px;
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
   align-items: center;
 }
-select {
-  width:120%;
+th input {
+  width:100%;
   height: 30px;
   display: flex;
   flex-wrap: wrap;

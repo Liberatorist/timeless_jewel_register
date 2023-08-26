@@ -199,12 +199,15 @@ async function buildTree(e, id) {
   $("#draw-shapes").attr("toggled", true)
 }
 
-function buildTradeString(jewel_type, seed, ie) {
+
+
+function buildTimelessJewelTradeString(jewel_type, seed) {
   var variants = {
     "0": ["asenath", "balbala", "nasima"],
     "1": ["xibaqua", "doryani", "ahuana"],
     "2": ["cadiro", "caspiro", "victario"]
   }
+
   var query = {
     "query": {
       "status": { "option": "online" },
@@ -219,14 +222,31 @@ function buildTradeString(jewel_type, seed, ie) {
     },
     "sort": { "price": "asc" }
   }
-  if (ie != "0"){
-    query["query"]["stats"][0]["filters"].push({"id": "explicit.stat_2422708892", "value": {"option": ie}})
+  window.open("https://www.pathofexile.com/trade/search/?q=" + encodeURIComponent(JSON.stringify(query)), '_blank');
+}
+
+function buildImpossibleEscapeTradeString(ie) {
+  var query = {
+    "query": {
+      "status": { "option": "online" },
+      "stats": [
+        {
+          "type": "count",
+          "filters": [
+            {"id": "explicit.stat_2422708892", "value": {"option": ie}}
+          ],
+          "value": { "min": 1 }
+        }]
+    },
+    "sort": { "price": "asc" }
   }
   window.open("https://www.pathofexile.com/trade/search/?q=" + encodeURIComponent(JSON.stringify(query)), '_blank');
 }
 
+
 window.buildTree = buildTree
-window.buildTradeString = buildTradeString
+window.buildTimelessJewelTradeString = buildTimelessJewelTradeString
+window.buildImpossibleEscapeTradeString = buildImpossibleEscapeTradeString
 
 
 $(function() {
