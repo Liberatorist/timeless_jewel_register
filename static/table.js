@@ -6,6 +6,8 @@ const time_formatter = new Intl.RelativeTimeFormat('en', {
 
 const currentDate = new Date(Date.now());
 
+
+
 function time_diff(timestamp){
     const minutes = (new Date(timestamp + ":00.000000Z") - currentDate) / 60000
     if (Math.abs(minutes) < 60){
@@ -17,8 +19,13 @@ function time_diff(timestamp){
     }
     const days = hours / 24
     return  time_formatter.format(Math.round(days), 'day');
-
 }
+
+function isRecent(timestamp) {
+    const days = (currentDate - new Date(timestamp + ":00.000000Z")) / 60000 / 60 / 24
+    return days <= 2;
+}
+
 var solutions = await fetch("./solutions.json")
     .then((res) => res.json());
 var prices = await fetch("./prices.json")
@@ -46,9 +53,11 @@ $(document).ready(function () {
             { title: 'Effect p.p.' },
             { title: 'Requirements' },
             { title: 'Price (div)' },
-            { title: '' },
+            { title: 'Trade' },
         ],
         columnDefs: [
+            {width    : "65px", targets: [9]},
+            {width    : "70px", targets: [3,4,5,6,8]},
             {   
                 render: function (data, type, row, meta) {
                     return '<button onclick="buildTree(event,' + meta.row + ')" style="height:30px;width:30px"></button>';
@@ -120,7 +129,16 @@ $(document).ready(function () {
             },
             {   
                 render: function (data, type, row) {
-                    return '<a href="javascript:buildTradeString(' + row[key2num["type"]] + ',' + row[key2num["seed"]] + ',' + row[key2num["ie"]] +');"> Trade </a>';
+                    var html = "<div>"
+                    if (row[key2num["ie"]] != ""){
+                        html += '<a href="javascript:buildImpossibleEscapeTradeString(' + row[key2num["ie"]] +');">\
+                                 <img title="Impossible Escape at &quot;' + keystone_map[row[key2num["ie"]]] + '&quot;" src="static/Impossible_Escape_inventory_icon.png" width="30" height="30" > \
+                                 </a>'
+                    }
+
+                    return html + '<a href="javascript:buildTimelessJewelTradeString(' + row[key2num["type"]] + ',' + row[key2num["seed"]] +');"> \
+                                    <img title="' + jewel_map[row[key2num["type"]]] + '" src=' + jewel_image_map[row[key2num["type"]]] + ' width="30" height="30"> \
+                                    </a>' + '</div>';
                 },
                 orderable: false,
                 targets: 9
@@ -138,6 +156,7 @@ $(document).ready(function () {
     var input_jewel_type = $('#jewel');
     var input_requirements = $('#requirements');
     var input_seed = $('#seed');
+    var input_show_recent = $('#recent');
 
     // Custom range filtering function
     $.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
@@ -169,6 +188,7 @@ $(document).ready(function () {
         if ((filter_requirements == "no_anoint" || filter_requirements == "basic") && data_requirements == "a"){ return false; }
         if (!isNaN(filter_seed) && data_seed.toLowerCase().indexOf(filter_seed.toLowerCase()) === -1 ){ return false; }
         if (data_price > filter_max_price){ return false; }
+        if (input_show_recent.is(":checked") && !isRecent(prices["timeless"][data_type][data_seed][1])){ return false; }
         return true;
     })
     $('#divide').on('change', function () {
@@ -199,6 +219,10 @@ $(document).ready(function () {
         table.draw();
     });
     input_seed.on('input', function () {
+        table.draw();
+    });
+    input_show_recent.on('input', function () {
+        console.log(input_show_recent.is(":checked"));
         table.draw();
     });
 

@@ -1,4 +1,4 @@
-venv
+.venv
 .idea
 drawings/
 __pycache__/
