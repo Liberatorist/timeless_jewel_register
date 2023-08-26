@@ -129,16 +129,15 @@ $(document).ready(function () {
             },
             {   
                 render: function (data, type, row) {
-                    var html = "<div>"
+                    var html = '<a href="javascript:buildTimelessJewelTradeString(' + row[key2num["type"]] + ',' + row[key2num["seed"]] +');"> \
+                                <img title="' + jewel_map[row[key2num["type"]]] + '" src=' + jewel_image_map[row[key2num["type"]]] + ' width="30" height="30"> \
+                                </a>'
                     if (row[key2num["ie"]] != ""){
                         html += '<a href="javascript:buildImpossibleEscapeTradeString(' + row[key2num["ie"]] +');">\
                                  <img title="Impossible Escape at &quot;' + keystone_map[row[key2num["ie"]]] + '&quot;" src="static/Impossible_Escape_inventory_icon.png" width="30" height="30" > \
                                  </a>'
                     }
-
-                    return html + '<a href="javascript:buildTimelessJewelTradeString(' + row[key2num["type"]] + ',' + row[key2num["seed"]] +');"> \
-                                    <img title="' + jewel_map[row[key2num["type"]]] + '" src=' + jewel_image_map[row[key2num["type"]]] + ' width="30" height="30"> \
-                                    </a>' + '</div>';
+                    return html;
                 },
                 orderable: false,
                 targets: 9
@@ -188,7 +187,7 @@ $(document).ready(function () {
         if ((filter_requirements == "no_anoint" || filter_requirements == "basic") && data_requirements == "a"){ return false; }
         if (!isNaN(filter_seed) && data_seed.toLowerCase().indexOf(filter_seed.toLowerCase()) === -1 ){ return false; }
         if (data_price > filter_max_price){ return false; }
-        if (input_show_recent.is(":checked") && !isRecent(prices["timeless"][data_type][data_seed][1])){ return false; }
+        if (input_show_recent.is(":checked") && (!isRecent(prices["timeless"][data_type][data_seed][1]) || data_price == 0) ){ return false; }
         return true;
     })
     $('#divide').on('change', function () {
