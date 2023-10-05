@@ -5,10 +5,11 @@ from database import Jewel, get_prices, update_db
 
 app = Flask(__name__)
 
-with open("data/compressed_solutions.json", "r") as file:
+with open("static/compressed_solutions.json", "r") as file:
     steiner_solutions = json.loads(file.read())
+
     keys = steiner_solutions["keys"]
-    solutions = steiner_solutions["solutions"]
+    # solutions = steiner_solutions["solutions"]
     num2type = steiner_solutions["num2type"]
     num2slot = steiner_solutions["num2slot"]
     key_map = {v: idx for idx, v in enumerate(steiner_solutions["keys"])}
@@ -79,7 +80,7 @@ def get_json():
 
 @app.route('/solutions.json')
 def get_solutions():
-    print(solutions)
+    print("number of solutions!!!!:", len(solutions))
     return solutions
 
 @app.route('/prices.json')

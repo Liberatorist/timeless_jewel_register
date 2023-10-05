@@ -53,11 +53,12 @@ min_effect = {
 def get_timeless_node_mapping():
     data={}
     for jewel_type in [TimelessJewelType.BRUTAL_RESTRAINT, TimelessJewelType.ELEGANT_HUBRIS, TimelessJewelType.GLORIOUS_VANITY]:
+        print("Now mapping", jewel_type)
         data[jewel_type.value] = {}
         with open(f'data/TimelessJewels/{jewel_type.value.lower().replace(" ", "_")}_passives.txt', 'r', encoding='utf8') as file:
             passives = [int(line) for line in file.read().split('\n') if line != '']
 
-        with open("steiner_solver/node_mapping.json", "r") as file:
+        with open("one_time_use/steiner_solver/node_mapping.json", "r") as file:
             normalize = {int(k): v for k, v in json.loads(file.read()).items()}
 
         with zipfile.ZipFile(f'data/TimelessJewels/{jewel_type.value.lower().replace(" ", "_")}.zip') as archive:
@@ -71,7 +72,6 @@ def get_timeless_node_mapping():
                     values = []
                     for p, ap in zip(passives, alt_passives):
                         if p not in normalize: # weird nodes. todo: fix timeless jewel generator maybe
-                            # print(p)
                             continue
                         for apk, apv in zip(ap[1::2], ap[2::2]):
                             if apk=="3835":
@@ -98,6 +98,7 @@ def in_radius(node_id1, node_id2, radius):
 
 with open("static/tree.json", "r") as file:
     tree = json.loads(file.read())
+
 def get_passives_in_radius_of_jewel_slots():
     data = {}
     for jewel_id in notable_hashes_for_jewels:
@@ -211,7 +212,6 @@ def fetch_solutions():
 
             if jewel_type == TimelessJewelType.BRUTAL_RESTRAINT:
                 passives_in_radius &= {37078, 10835, 3452, 45067, 21602, 65097, 33545, 19506, 44103, 35958, 11730, 27137}
-
             for seed in seed_ranges[jewel_type]:
                 aura_nodes = []
                 effect_values = []
@@ -235,7 +235,14 @@ def fetch_solutions():
 
                         solution = find_solution_with_ie(jewel_type, jewel_id, slot, aura_nodes, effect_values)
                         if solution:
-                            solutions.append({"seed": seed, "type": jewel_type.value, "effect": sum(effect_values), **solution})
+                            e = 0
+                            for aura_node, aura_effect in zip(a[0], a[1]):
+                                if aura_node in solution["steiner_tree"]:
+                                    e += aura_effect
+
+                            solutions.append({"seed": seed, "type": jewel_type.value, "effect": e, **solution})
+
+                            # print(e, solution)
 
                         if effect >= 36:
                             solution = find_solution_with_anoint(jewel_type, jewel_id, slot, aura_nodes, effect_values)
@@ -313,7 +320,7 @@ def clean_up_data():
             [s["seed"], type2num[s["type"]], s["effect"], slot2num[s["slot"]], s["steiner_tree"], s["aura_nodes"], s["cost"], s["anoint"][0] if s["anoint"] else 0,  s["ie"][0] if s["ie"] else 0]
         )
         
-    with open("data/compressed_solutions.json", "w") as file:
+    with open("static/compressed_solutions.json", "w") as file:
         file.write(json.dumps(compressed_solutions, separators=(',', ':')))
 
 

@@ -1,5 +1,7 @@
 from collections import defaultdict
 from datetime import datetime
+import json
+import os
 import sqlite3 as sl
 
 
@@ -33,7 +35,6 @@ def get_prices():
         impossible_escapes = con.execute("SELECT * FROM IMPOSSIBLE_ESCAPES ORDER BY price")
         for ie in impossible_escapes:
             prices["ie"][ie[0]] = [ie[3], ie[2]]
-    print(prices)
     return prices
 
 class Jewel:
@@ -73,7 +74,50 @@ def update_ie(data):
             con.execute(sql_query)
     con.commit()
 
+def initialise_db():
+    os.remove("trade.db")
+    con = connect_to_db()
+    with con:
+        con.execute("""
+            CREATE TABLE IF NOT EXISTS jewels (
+                seed INTEGER NOT NULL,
+                type INTEGER NOT NULL,
+                last_seen DATETIME,
+                price REAL,
+                PRIMARY KEY (seed, type)
+            );
+        """)
+        con.execute("""
+            CREATE TABLE IF NOT EXISTS impossible_escapes (
+                keystone INTEGER NOT NULL,
+                name TEXT NOT NULL,
+                last_seen DATETIME,
+                price REAL,
+                PRIMARY KEY (name)
+            );
+        """)
+        timeless_jewels = {0: set(), 1: set(), 2: set()}
+        impossible_escapes = set()
+
+        with open("static/compressed_solutions.json", "r") as file:
+            for solution in json.loads(file.read())["solutions"]:
+                timeless_jewels[solution[1]].add(solution[0])
+                if solution[8]:
+                    impossible_escapes.add(solution[8])
+
+        for jewel_type, seeds in timeless_jewels.items():
+            for seed in seeds:
+                con.execute(f'INSERT OR IGNORE INTO jewels (seed, type) VALUES ({seed}, {jewel_type});')
+        with open("data/tree_data.json", "r") as file:
+            tree_data = json.loads(file.read())
+        for keystone_id in impossible_escapes:
+            con.execute(f'INSERT OR IGNORE INTO impossible_escapes (keystone, name) VALUES ("{keystone_id}", "{tree_data["nodes"][str(keystone_id)]["name"]}");')
+    con.commit() 
+
 
 def update_db(data):
     update_jewels(data["jewels"])
     update_ie(data["ie"])
+
+if __name__ == "__main__":
+    initialise_db()
