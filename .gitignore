@@ -3,7 +3,5 @@
 drawings/
 __pycache__/
 .vscode/
-steiner_solver/stp.linux.x86_64.gnu.opt.spx2
-steiner_solver/x.stp
+one_time_use/steiner_solver/stp.linux.x86_64.gnu.opt.spx2
 data/TimelessJewels
-x.stplog
