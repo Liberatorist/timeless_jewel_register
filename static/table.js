@@ -26,7 +26,6 @@ function isRecent(timestamp) {
 }
 
 var solutions = await fetch("./solutions.json").then((res) => res.json());
-console.log("number of solutions: " + solutions.length);
 var prices = await fetch("./prices.json").then((res) => res.json());
 
 var keystone_map = {
@@ -212,6 +211,12 @@ $(document).ready(function () {
       },
       {
         render: function (data, type, row) {
+          if (
+            prices["timeless"][row[key2num["type"]]][row[key2num["seed"]]] ==
+            undefined
+          ) {
+            return "";
+          }
           var price =
             prices["timeless"][row[key2num["type"]]][row[key2num["seed"]]][0];
 

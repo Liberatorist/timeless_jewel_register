@@ -9,12 +9,11 @@ with open("static/compressed_solutions.json", "r") as file:
     steiner_solutions = json.loads(file.read())
 
     keys = steiner_solutions["keys"]
-    # solutions = steiner_solutions["solutions"]
     num2type = steiner_solutions["num2type"]
     num2slot = steiner_solutions["num2slot"]
     key_map = {v: idx for idx, v in enumerate(steiner_solutions["keys"])}
     slot2num = {v: k for k, v in enumerate(steiner_solutions["num2slot"])}
-    solutions = [s for s in steiner_solutions["solutions"] if s[key_map["effect"]] / s[key_map["cost"]] >= 2.5]
+    solutions = [s for s in steiner_solutions["solutions"] if s[key_map["effect"]] / s[key_map["cost"]] >= 2]
 
 
 with open("data/jewel_slots.json", "r") as file:
@@ -45,23 +44,9 @@ class Jewel:
 
 
 
-def get_all_jewels():
-    jewel_prices, ie_prices = get_prices()
-    jewels = []
-    for id, s in enumerate(solutions):
-        p = jewel_prices[(num2type[s[key_map["type"]]], s[key_map["seed"]])]
-        price = p["price"] if p["price"] else ""
-        last_seen = p["last_seen"]
-        if s[key_map["ie"]] and price and ie_prices[s[key_map["ie"]]]["price"]:
-            price = price + ie_prices[s[key_map["ie"]]]["price"]
-        jewels.append(Jewel(id=id, price=price, last_seen=last_seen, values=s))
-    return jewels
-
-
 @app.route('/',methods = ['GET'])
 def endpoint():
     return render_template("basic_table.html")
-
  
 @app.route('/',methods = ['POST'])
 def post():
@@ -80,7 +65,6 @@ def get_json():
 
 @app.route('/solutions.json')
 def get_solutions():
-    print("number of solutions!!!!:", len(solutions))
     return solutions
 
 @app.route('/prices.json')
