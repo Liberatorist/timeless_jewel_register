@@ -343,6 +343,7 @@ $(document).ready(function () {
     }
     if (
       input_show_recent.is(":checked") &&
+      prices["timeless"][data_type][data_seed] != undefined &&
       (!isRecent(prices["timeless"][data_type][data_seed][1]) ||
         data_price == 0)
     ) {
