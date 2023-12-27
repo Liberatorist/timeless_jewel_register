@@ -54,6 +54,7 @@ def post():
     return jsonify({
         "jewel_id": slot2hash[solution[key_map["slot"]]],
         "keystone_id": solution[key_map["ie"]] if solution[key_map["ie"]] else None,
+        "thread": solution[key_map["thread"]] if solution[key_map["thread"]] else None,
         "active_nodes": solution[key_map["active_nodes"]],
         "important_nodes": solution[key_map["aura_nodes"]]
     })

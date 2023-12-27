@@ -44,16 +44,18 @@
       <th>
         <input type="search" id="min_effect_pp" name="min_effect_pp" placeholder="Min.">
       </th><th>
-        <select id="requirements" name="requirements">
-              <option value="none" selected disabled hidden>Requirements</option>
-              <option value="none">Any</option>
-              <option value="no_ie">No IE</option>
-              <option value="no_anoint">No Anoint</option>
-              <option value="basic">No IE/Anoint</option>
-        </select>
-      </th><th>
+        <div class="requirements-div" >        
+          <input type="checkbox" id="oil_blocked" name="oil_blocked">
+          <label for="oil_blocked"> </label>
+          <input type="checkbox" id="toh_blocked" name="toh_blocked">
+          <label for="toh_blocked"> </label>
+          <input type="checkbox" id="ie_blocked" name="ie_blocked">
+          <label for="ie_blocked"> </label>
+      </th>
+      <th>
         <input type="search" id="max_price" name="max_price" placeholder="Max.">
-      </th><th>
+      </th>
+      <th>
       </th>
       </tr>
     </tfoot>

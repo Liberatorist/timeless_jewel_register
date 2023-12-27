@@ -15,3 +15,80 @@ th input {
   justify-content: center;
   align-items: center;
 }
+
+.requirements-div > *{
+  display:none;
+}
+
+.requirements-div > * {
+  cursor: pointer;
+}
+
+.requirements-div > * + label {
+  background-size: 100%;
+  display:inline-block;
+  height: 30px;
+  width: 30px;
+}
+.requirements-div > *:checked  + label{
+  background-size: 100%;
+  display:inline-block;
+  height: 30px;
+  width: 30px;
+
+}
+
+.requirements-div > #oil_blocked + label {
+  background:url('Golden_Oil_inventory_icon.png') no-repeat ;
+  background-size: 100%;
+  display:inline-block;
+  height: 30px;
+  width: 30px; 
+}
+
+.requirements-div > #oil_blocked:checked  + label{
+  background:url('Golden_Oil_inventory_icon.png') no-repeat;
+  background-size: 100%;
+  display:inline-block;
+  height: 30px;
+  width: 30px;
+  filter: grayscale(100%);
+
+
+}
+
+.requirements-div > #ie_blocked + label {
+  background:url('Impossible_Escape_inventory_icon.png') no-repeat ;
+  background-size: 100%;
+  display:inline-block;
+  height: 30px;
+  width: 30px;
+}
+
+.requirements-div > #ie_blocked:checked  + label{
+  background:url('Impossible_Escape_inventory_icon.png') no-repeat;
+  background-size: 100%;
+  display:inline-block;
+  height: 30px;
+  width: 30px;
+  filter: grayscale(100%);
+
+}
+
+.requirements-div > #toh_blocked + label {
+  background:url('Thread_of_Hope_inventory_icon.png') no-repeat ;
+  background-size: 100%;
+  display:inline-block;
+  height: 30px;
+  width: 30px;
+  
+}
+
+.requirements-div > #toh_blocked:checked  + label{
+  background:url('Thread_of_Hope_inventory_icon.png') no-repeat;
+  background-size: 100%;
+  display:inline-block;
+  height: 30px;
+  width: 30px;
+  filter: grayscale(100%);
+}

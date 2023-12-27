@@ -153,17 +153,42 @@ function draw_keystone_radius(keystone_id, jewel_id) {
   shape.linewidth = 1;
 }
 
+function draw_thread_ring(thread, jewel_id) {
+  var thread_of_hope_radii = {
+    "small": {"min": 960, "max": 1320},
+    "medium": {"min": 1320, "max": 1680},
+    "large": {"min": 1680 , "max": 2040},
+    "very_large": {"min": 2040, "max": 2400},
+    "massive": {"min": 2400, "max": 2880},
+  }
+  var inner_radius = thread_of_hope_radii[thread["size"]]["min"];
+  var outer_radius = thread_of_hope_radii[thread["size"]]["max"];
+  
+  var thread_socket = tree[thread["thread_id"]];
+  var scaled_coordinates = scale([thread_socket["x"], thread_socket["y"]], jewel_id);
+  var arc = two.makeArcSegment(
+    scaled_coordinates[0], scaled_coordinates[1],
+    scale_val(inner_radius), scale_val(outer_radius),
+    0, 2 * Math.PI,
+  );
+  arc.stroke = "black";
+  arc.fill = "#d9feff";
+  arc.linewidth = 1;
+}
 
 function inradius(middle, node, radius) {
   return (middle["x"] - node["x"]) ** 2 + (middle["y"] - node["y"]) ** 2 < radius ** 2
 }
 
-function draw_all(jewel_id, keystone_id, active_nodes, important_nodes) {
+function draw_all(jewel_id, keystone_id, active_nodes, important_nodes, thread) {
   var shape = two.makeRectangle(200, 200, 400, 400);
   shape.fill = "black";
   draw_timeless_radius(jewel_id); 
   if (keystone_id != null){
     draw_keystone_radius(keystone_id, jewel_id);
+  }
+  if (thread != null){
+    draw_thread_ring(thread, jewel_id);
   }
 
   for (const [node_id, node] of Object.entries(tree)) {
@@ -180,7 +205,7 @@ function draw_all(jewel_id, keystone_id, active_nodes, important_nodes) {
 }
 
 async function buildTree(e, id) {
-  const data = await fetch("/", {
+  fetch("/", {
     method: "POST",
     body: JSON.stringify({
       "id": id
@@ -189,14 +214,17 @@ async function buildTree(e, id) {
       "Content-type": "application/json; charset=UTF-8"
     }
   })
-  .then(resp => resp.json());
-  draw_all(data.jewel_id, data.keystone_id, data.active_nodes, data.important_nodes);
-  
-  var div = document.getElementById("draw-shapes");
-  div.style.left = e.clientX + "px";
-  div.style.top = Math.min(e.clientY, window.innerHeight - 400) + "px";
-  $("#draw-shapes").toggle();
-  $("#draw-shapes").attr("toggled", true)
+  .then(resp => resp.json())
+  .then((data) => {
+    draw_all(data.jewel_id, data.keystone_id, data.active_nodes, data.important_nodes, data.thread);
+  })
+  .then(() => {
+    var div = document.getElementById("draw-shapes");
+    div.style.left = e.clientX + "px";
+    div.style.top = Math.min(e.clientY, window.innerHeight - 400) + "px";
+    $("#draw-shapes").toggle();
+    $("#draw-shapes").attr("toggled", true)
+  });
 }
 
 
@@ -243,11 +271,37 @@ function buildImpossibleEscapeTradeString(ie) {
   window.open("https://www.pathofexile.com/trade/search/?q=" + encodeURIComponent(JSON.stringify(query)), '_blank');
 }
 
+function buildThreadOfHopeTradeString(thread_size) {
+  var option = {
+    "small": 1,
+    "medium": 2,
+    "large": 3,
+    "very_large": 4,
+    "massive": 5,
+  } [thread_size]
+  
+  var query = {
+    "query": {
+      "status": { "option": "online" },
+      "stats": [
+        {
+          "type": "count",
+          "filters": [
+            {"id": "explicit.stat_3642528642", "value": {"option": option}}
+          ],
+          "value": { "min": 1 }
+        }]
+    },
+    "sort": { "price": "asc" }
+  }
+  window.open("https://www.pathofexile.com/trade/search/?q=" + encodeURIComponent(JSON.stringify(query)), '_blank');
+}
+
 
 window.buildTree = buildTree
 window.buildTimelessJewelTradeString = buildTimelessJewelTradeString
 window.buildImpossibleEscapeTradeString = buildImpossibleEscapeTradeString
-
+window.buildThreadOfHopeTradeString = buildThreadOfHopeTradeString
 
 $(function() {
   $("body").click(function() {

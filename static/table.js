@@ -81,24 +81,8 @@ var keystone_map = {
   60069: "Hollow Palm Technique",
   37081: "Pitfighter",
 };
-var num2slot = [
-  "Cluster (Zealot's Oath)",
-  "Marauder",
-  "Ghost Dance",
-  "Minion Instability",
-  "Cluster (Call to Arms)",
-  "Eternal Youth",
-  "Pain Attunement",
-  "Iron Will",
-  "Iron Grip",
-  "Runebinder",
-  "Acrobatics",
-  "Solipsism",
-  "Cluster (Divine Shield)",
-  "Unwavering Stance",
-  "Mind over Matter",
-  "Duelist",
-];
+
+var num2slot = ["Mind over Matter","Solipsism","Duelist","Unwavering Stance","Cluster (Call to Arms)","Minion Instability","Iron Grip","Marauder","Runebinder","Ghost Dance","Acrobatics","Iron Will","Eternal Youth","Cluster (Zealot's Oath)","Pain Attunement","Cluster (Divine Shield)"];
 var key2num = {
   seed: 0,
   type: 1,
@@ -109,6 +93,7 @@ var key2num = {
   cost: 6,
   anoint: 7,
   ie: 8,
+  thread: 9,
 };
 var jewel_image_map = [
   "static/Brutal_Restraint_inventory_icon.png",
@@ -116,6 +101,13 @@ var jewel_image_map = [
   "static/Elegant_Hubris_inventory_icon.png",
 ];
 var jewel_map = ["Brutal Restraint", "Glorious Vanity", "Elegant Hubris"];
+var thread_size_map = {
+  "small": "Small",
+  "medium": "Medium",
+  "large": "Large",
+  "very_large": "Very Large",
+  "massive": "Massive",
+}
 
 $(document).ready(function () {
   var table = $("#data").DataTable({
@@ -205,6 +197,10 @@ $(document).ready(function () {
           if (row[key2num["anoint"]] != "") {
             return '<img src="static/Golden_Oil_inventory_icon.png" width="30" height="30"><hidden style="display:none;">a</hidden>';
           }
+
+          if (Object.keys(row[key2num["thread"]]).length !== 0) {
+            return '<img  title="' + thread_size_map[row[key2num["thread"]]["size"]] + ' Thread of Hope" src="static/Thread_of_Hope_inventory_icon.png" width="30" height="30"><hidden style="display:none;">t</hidden>';
+          }
           return "";
         },
         targets: 7,
@@ -262,6 +258,14 @@ $(document).ready(function () {
               '&quot;" src="static/Impossible_Escape_inventory_icon.png" width="30" height="30" > \
                                  </a>';
           }
+          if (Object.keys(row[key2num["thread"]]).length !== 0) {
+            html +=
+              '<a href="javascript:buildThreadOfHopeTradeString(&quot;' +
+              row[key2num["thread"]]["size"] +
+              '&quot;);">\
+                                 <img title="' + thread_size_map[row[key2num["thread"]]["size"]] + ' Thread of Hope" src="static/Thread_of_Hope_inventory_icon.png" width="30" height="30" > \
+                                 </a>';
+          }
           return html;
         },
         orderable: false,
@@ -280,6 +284,9 @@ $(document).ready(function () {
   var input_requirements = $("#requirements");
   var input_seed = $("#seed");
   var input_show_recent = $("#recent");
+  var input_oil_blocked = $("#oil_blocked");
+  var input_ie_blocked = $("#ie_blocked");
+  var input_toh_blocked = $("#toh_blocked");
 
   // Custom range filtering function
   $.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
@@ -320,16 +327,13 @@ $(document).ready(function () {
     if (!isNaN(filter_jewel_type) && data_type != filter_jewel_type) {
       return false;
     }
-    if (
-      (filter_requirements == "no_ie" || filter_requirements == "basic") &&
-      data_requirements == "i"
-    ) {
+    if (input_oil_blocked.is(":checked") && data_requirements == "a") {
       return false;
     }
-    if (
-      (filter_requirements == "no_anoint" || filter_requirements == "basic") &&
-      data_requirements == "a"
-    ) {
+    if (input_ie_blocked.is(":checked") && data_requirements == "i") {
+      return false;
+    }
+    if (input_toh_blocked.is(":checked") && data_requirements == "t") {
       return false;
     }
     if (
@@ -383,6 +387,15 @@ $(document).ready(function () {
   });
   input_show_recent.on("input", function () {
     console.log(input_show_recent.is(":checked"));
+    table.draw();
+  });
+  input_oil_blocked.on("input", function () {
+    table.draw();
+  });
+  input_ie_blocked.on("input", function () {
+    table.draw();
+  });
+  input_toh_blocked.on("input", function () {
     table.draw();
   });
 });
