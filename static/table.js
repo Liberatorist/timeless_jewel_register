@@ -82,7 +82,25 @@ var keystone_map = {
   37081: "Pitfighter",
 };
 
-var num2slot = ["Acrobatics","Cluster (Call to Arms)","Cluster (Divine Shield)","Cluster (Zealot's Oath)","Duelist","Eternal Youth","Ghost Dance","Iron Grip","Iron Will","Marauder","Mind over Matter","Minion Instability","Pain Attunement","Runebinder","Solipsism","Unwavering Stance"];
+var num2slot = [
+  "Acrobatics",
+  "Cluster (Call to Arms)",
+  "Cluster (Divine Shield)",
+  "Cluster (Zealot's Oath)",
+  "Duelist",
+  "Eternal Youth",
+  "Ghost Dance",
+  "Iron Grip",
+  "Iron Will",
+  "Marauder",
+  "Mind over Matter",
+  "Minion Instability",
+  "Pain Attunement",
+  "Runebinder",
+  "Solipsism",
+  "Unwavering Stance",
+];
+
 var key2num = {
   seed: 0,
   type: 1,
@@ -95,19 +113,22 @@ var key2num = {
   ie: 8,
   thread: 9,
 };
+
 var jewel_image_map = [
   "static/Brutal_Restraint_inventory_icon.png",
   "static/Glorious_Vanity_inventory_icon.png",
   "static/Elegant_Hubris_inventory_icon.png",
 ];
+
 var jewel_map = ["Brutal Restraint", "Glorious Vanity", "Elegant Hubris"];
+
 var thread_size_map = {
-  "small": "Small",
-  "medium": "Medium",
-  "large": "Large",
-  "very_large": "Very Large",
-  "massive": "Massive",
-}
+  small: "Small",
+  medium: "Medium",
+  large: "Large",
+  very_large: "Very Large",
+  massive: "Massive",
+};
 
 $(document).ready(function () {
   var table = $("#data").DataTable({
@@ -199,7 +220,11 @@ $(document).ready(function () {
           }
 
           if (Object.keys(row[key2num["thread"]]).length !== 0) {
-            return '<img  title="' + thread_size_map[row[key2num["thread"]]["size"]] + ' Thread of Hope" src="static/Thread_of_Hope_inventory_icon.png" width="30" height="30"><hidden style="display:none;">t</hidden>';
+            return (
+              '<img  title="' +
+              thread_size_map[row[key2num["thread"]]["size"]] +
+              ' Thread of Hope" src="static/Thread_of_Hope_inventory_icon.png" width="30" height="30"><hidden style="display:none;">t</hidden>'
+            );
           }
           return "";
         },
@@ -263,7 +288,9 @@ $(document).ready(function () {
               '<a href="javascript:buildThreadOfHopeTradeString(&quot;' +
               row[key2num["thread"]]["size"] +
               '&quot;);">\
-                                 <img title="' + thread_size_map[row[key2num["thread"]]["size"]] + ' Thread of Hope" src="static/Thread_of_Hope_inventory_icon.png" width="30" height="30" > \
+                                 <img title="' +
+              thread_size_map[row[key2num["thread"]]["size"]] +
+              ' Thread of Hope" src="static/Thread_of_Hope_inventory_icon.png" width="30" height="30" > \
                                  </a>';
           }
           return html;
@@ -296,7 +323,6 @@ $(document).ready(function () {
     var filter_max_price = parseFloat(input_max_price.val(), 0);
     var filter_position = String(input_position.val());
     var filter_jewel_type = parseFloat(input_jewel_type.val(), 0);
-    var filter_requirements = String(input_requirements.val());
     var filter_seed = String(input_seed.val());
 
     var data_type = parseFloat(data[1]) || 0;
