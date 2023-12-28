@@ -82,7 +82,7 @@ var keystone_map = {
   37081: "Pitfighter",
 };
 
-var num2slot = ["Mind over Matter","Solipsism","Duelist","Unwavering Stance","Cluster (Call to Arms)","Minion Instability","Iron Grip","Marauder","Runebinder","Ghost Dance","Acrobatics","Iron Will","Eternal Youth","Cluster (Zealot's Oath)","Pain Attunement","Cluster (Divine Shield)"];
+var num2slot = ["Acrobatics","Cluster (Call to Arms)","Cluster (Divine Shield)","Cluster (Zealot's Oath)","Duelist","Eternal Youth","Ghost Dance","Iron Grip","Iron Will","Marauder","Mind over Matter","Minion Instability","Pain Attunement","Runebinder","Solipsism","Unwavering Stance"];
 var key2num = {
   seed: 0,
   type: 1,

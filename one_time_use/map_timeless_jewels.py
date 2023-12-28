@@ -383,14 +383,15 @@ def clean_up_data():
     for v in jewels.values():
         for slot_name in v.keys():
             all_slots.add(slot_name)
+    
 
     keys = ["seed", "type", "effect", "slot", "active_nodes", "aura_nodes", "cost", "anoint", "ie", "thread"]
     num2type = ["Brutal Restraint", "Glorious Vanity", "Elegant Hubris"]
     type2num = {v:k for k,v in enumerate(num2type)}
-    num2slot = list(all_slots)
+    num2slot = sorted(all_slots)
     slot2num = {k: v for v, k in enumerate(num2slot)}
 
-
+# 
     compressed_solutions = {}
     compressed_solutions["num2slot"] = num2slot
     compressed_solutions["num2type"] = num2type
@@ -412,5 +413,5 @@ if __name__ == '__main__':
     # get_passives_in_radius_of_keystones()
     # get_timeless_node_mapping()
     # get_relevant_threads_of_hope()
-    fetch_solutions()
+    # fetch_solutions()
     clean_up_data()
