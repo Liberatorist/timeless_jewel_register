@@ -208,25 +208,25 @@ $(document).ready(function () {
       },
       {
         render: function (data, type, row) {
+          var html = "";
           if (row[key2num["ie"]] != "") {
-            return (
+            html +=
               '<img title="Impossible Escape at &quot;' +
               keystone_map[row[key2num["ie"]]] +
               '&quot;" src="static/Impossible_Escape_inventory_icon.png" width="30" height="30"><hidden style="display:none;">i</hidden>'
-            );
           }
           if (row[key2num["anoint"]] != "") {
-            return '<img src="static/Golden_Oil_inventory_icon.png" width="30" height="30"><hidden style="display:none;">a</hidden>';
+            html +=
+              '<img src="static/Golden_Oil_inventory_icon.png" width="30" height="30"><hidden style="display:none;">a</hidden>';
           }
 
           if (Object.keys(row[key2num["thread"]]).length !== 0) {
-            return (
+            html +=
               '<img  title="' +
               thread_size_map[row[key2num["thread"]]["size"]] +
               ' Thread of Hope" src="static/Thread_of_Hope_inventory_icon.png" width="30" height="30"><hidden style="display:none;">t</hidden>'
-            );
           }
-          return "";
+          return html;
         },
         targets: 7,
       },
@@ -244,7 +244,7 @@ $(document).ready(function () {
           if (!price) {
             return "";
           }
-          if (row[key2num["ie"]] != "") {
+          if (row[key2num["ie"]] != "" && prices["ie"][row[key2num["ie"]]] != undefined) {
             price += prices["ie"][row[key2num["ie"]]][0];
           }
           var last_seen =
@@ -331,7 +331,7 @@ $(document).ready(function () {
     var data_effect = parseFloat(data[4]) || 0;
     var data_points = parseFloat(data[5]) || 0;
     var data_effect_pp = parseFloat(data[6]) || 0;
-    var data_requirements = String(data[7]) || 0;
+    var data_requirements = String(data[7]) || "";
     var data_price = parseFloat(data[8]) || 0;
 
     if (data_effect < filter_min_effect) {
@@ -353,13 +353,13 @@ $(document).ready(function () {
     if (!isNaN(filter_jewel_type) && data_type != filter_jewel_type) {
       return false;
     }
-    if (input_oil_blocked.is(":checked") && data_requirements == "a") {
+    if (input_oil_blocked.is(":checked") && data_requirements.includes("a")) {
       return false;
     }
-    if (input_ie_blocked.is(":checked") && data_requirements == "i") {
+    if (input_ie_blocked.is(":checked") && data_requirements.includes("i")) {
       return false;
     }
-    if (input_toh_blocked.is(":checked") && data_requirements == "t") {
+    if (input_toh_blocked.is(":checked") && data_requirements.includes("t")) {
       return false;
     }
     if (
