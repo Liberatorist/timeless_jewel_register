@@ -8,9 +8,9 @@ class SteinerSolver:
         self.steiner_dir = os.path.join(os.getcwd(), "one_time_use", "steiner_solver")
         with open(os.path.join(self.steiner_dir, "base.stp"), "r") as file:
             self.base_string = file.read()
-        with open(os.path.join(self.steiner_dir, "node_mapping.json"), "r") as file:
-            self.normalize = {int(k): v for k, v in json.loads(file.read()).items()}
-        self.denormalize = {v: k for k, v in self.normalize.items()}
+        with open(os.path.join(self.steiner_dir, "node_mapping"), "r") as file:
+            self.denormalize = [int(node_id) for node_id in file.read().split("\n")]
+        self.normalize = {int(node_id): mapping_id for mapping_id, node_id in enumerate(self.denormalize)}
 
     def get_steiner_tree_for_terminals(self, terminals: list[int]) -> list[int]:
         full_string = self.base_string +\
@@ -20,10 +20,13 @@ class SteinerSolver:
 
         with open(os.path.join(self.steiner_dir, "x.stp"), "w") as file:
             file.write(full_string)
-        subprocess.call(f"{os.path.join(self.steiner_dir, 'stp.linux.x86_64.gnu.opt.spx2')} -f {os.path.join(self.steiner_dir,'x.stp')} -s {os.path.join(self.steiner_dir,'settings', 'write.set')}", shell=True, stdout=subprocess.DEVNULL,stderr=subprocess.STDOUT)
+        solver_location = os.path.join(self.steiner_dir, "stp.linux.x86_64.gnu.opt.spx2")
+        file_name = os.path.join(self.steiner_dir, "x.stp")
+        settings = os.path.join(self.steiner_dir, "settings", "write.set")
+        command = f"{solver_location} -f {file_name} -s {settings}"
+        subprocess.run(command, shell=True, capture_output=True)
         steiner_nodes = []
         with open("x.stplog") as file: 
-            
             lines = file.read().split("\n")
             for idx, line in enumerate(lines):
                 if line.startswith("Vertices"):

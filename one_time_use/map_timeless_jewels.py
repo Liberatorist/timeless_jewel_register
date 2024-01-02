@@ -1,5 +1,7 @@
+from collections import defaultdict
 from enum import Enum
 import io
+import itertools
 import os, stat
 import json
 import math
@@ -10,7 +12,7 @@ from steiner_solver.steiner_interface import SteinerSolver
 
 
 
-def get_passives_needed(jewel_id, anchor_points, aura_effect_nodes):
+def get_passives_needed(jewel_id: int, anchor_points: set[int], aura_effect_nodes: set[int]) -> list[int]:
     terminals = [jewel_id] + list(anchor_points) + list(aura_effect_nodes)
     solver = SteinerSolver()
     steiner_nodes = solver.get_steiner_tree_for_terminals(terminals)
@@ -34,6 +36,10 @@ with open("data/aura_nodes_by_seed.json", "r") as file:
 
 with open("static/tree.json", "r") as file:
     tree = {int(k): v for k, v in json.loads(file.read()).items()}
+
+with open("data/tree_data.json", "r") as file:
+    tree_data = json.loads(file.read())["nodes"]
+    del tree_data["root"]
 
 with open("data/thread_of_hope_overlaps.json", "r") as file:
     threads_for_jewel = {int(k): v for k, v in json.loads(file.read()).items()}
@@ -104,11 +110,11 @@ notable_hashes_for_jewels = [
 	18436, 11150, 22748, 64583, 61288, 13170, 9797, 41876, 59585,
 ]
 
-def in_radius(node_id1, node_id2, radius):
+def in_radius(node_id1: int, node_id2: int, radius: int):
     return (tree[node_id1]["x"]  - tree[node_id2]["x"]) ** 2 +\
             (tree[node_id1]["y"]  - tree[node_id2]["y"]) ** 2 <= radius**2
 
-def in_between(node_id1, node_id2, radii):
+def in_between(node_id1: int, node_id2: int, radii: dict):
     return radii["min"] ** 2 <= (tree[node_id1]["x"]  - tree[node_id2]["x"]) ** 2 +\
             (tree[node_id1]["y"]  - tree[node_id2]["y"]) ** 2 <= radii["max"]**2
 
@@ -180,7 +186,7 @@ def get_passives_in_radius_of_keystones():
         file.write(json.dumps(data, separators=(',', ':')))
 
 
-def get_cost(nodes, jewel_type, slot):
+def get_cost(nodes: set[int], jewel_type: TimelessJewelType, slot: int):
     if "exact_cost" in jewel_slots[jewel_type.value][slot]:
         return jewel_slots[jewel_type.value][slot]["exact_cost"]
     else:
@@ -188,7 +194,7 @@ def get_cost(nodes, jewel_type, slot):
 
 def find_solution_without_anoint(seed, jewel_type, jewel_id, slot, aura_nodes, effect):
     steiner_tree_nodes = get_passives_needed(jewel_id=jewel_id, anchor_points=jewel_slots[jewel_type.value][slot]["anchors"], aura_effect_nodes=aura_nodes)
-    return [{
+    return {
         "seed": seed,
         "type": jewel_type.value,
         "slot": slot,
@@ -196,66 +202,68 @@ def find_solution_without_anoint(seed, jewel_type, jewel_id, slot, aura_nodes, e
         "aura_nodes": list(aura_nodes),
         "cost": get_cost(steiner_tree_nodes, jewel_type, slot),
         "effect": effect,
-        "anoint": [],
-        "ie": [],
+        "anoint": 0,
+        "ie": 0,
         "thread": {}
-    }]
+    }
 
-def find_solution_with_anoint(seed, jewel_type, jewel_id, slot, aura_nodes, effect):
-    node_to_anoint = 0
-    points_with_anoint = math.inf
-    steiner_nodes_with_anoint = []
+def find_solutions_with_anoint(seed: int, jewel_type: TimelessJewelType, jewel_id: int, slot: int, aura_nodes: list[int], effect: int):
+    solutions = []
     for node in aura_nodes:
         anoint_nodes = set(aura_nodes) - {node}
         steiner_tree_nodes = get_passives_needed(jewel_id=jewel_id, anchor_points=jewel_slots[jewel_type.value][slot]["anchors"], aura_effect_nodes=anoint_nodes)
-        if len(steiner_tree_nodes) < points_with_anoint:
-            node_to_anoint = node
-            points_with_anoint = len(steiner_tree_nodes)
-            steiner_nodes_with_anoint = steiner_tree_nodes
-
-    steiner_tree_nodes = steiner_nodes_with_anoint + [node_to_anoint]
-    return [{
-        "seed": seed,
-        "type": jewel_type.value,
-        "slot": slot,
-        "steiner_tree": steiner_tree_nodes,
-        "aura_nodes": list(aura_nodes),
-        "cost": get_cost(steiner_tree_nodes, jewel_type, slot) - 1,
-        "anoint": [node_to_anoint],
-        "ie": [],
-        "thread": {},
-        "effect": effect
-    }]
+        cost = get_cost(steiner_tree_nodes, jewel_type, slot)
+        steiner_tree_nodes.append(node)
+        solutions.append({
+            "seed": seed,
+            "type": jewel_type.value,
+            "slot": slot,
+            "steiner_tree": steiner_tree_nodes,
+            "aura_nodes": list(aura_nodes),
+            "cost": cost,
+            "anoint": node,
+            "ie": 0,
+            "thread": {},
+            "effect": effect
+        })
+    return solutions
 
 
 
-def find_solutions_with_ie(seed, jewel_type, jewel_id, slot, aura_nodes, effect):
+def find_solutions_with_ie(seed: int, jewel_type: TimelessJewelType, jewel_id: int, slot: int, aura_nodes: list[int], effect: int, cost_without_ie: int, anoint: int=None):
     solutions = []
+    aura_nodes = set(aura_nodes) - {anoint} if anoint else set(aura_nodes)
     for keystone_id, passives_around_keystone in passives_for_keystone.items():
-        if len(set(aura_nodes) & passives_around_keystone) >= 2:
+        if len(set(aura_nodes) & passives_around_keystone) >= 1:
             remaining_nodes = set(aura_nodes) - passives_around_keystone
             steiner_tree_nodes = get_passives_needed(jewel_id=jewel_id, anchor_points=jewel_slots[jewel_type.value][slot]["anchors"], aura_effect_nodes=remaining_nodes)
             steiner_tree_nodes += list(set(aura_nodes) & passives_around_keystone)
+            cost = get_cost(steiner_tree_nodes, jewel_type, slot)
+            if cost_without_ie - cost < 2:  # impossible escape has to save at least 2 points
+                continue
             solutions.append({
                 "seed": seed,
                 "type": jewel_type.value,
                 "slot": slot,
-                "steiner_tree": steiner_tree_nodes,
-                "aura_nodes": list(aura_nodes),
-                "cost": get_cost(steiner_tree_nodes, jewel_type, slot),
-                "anoint": [],
-                "ie": [keystone_id],
+                "steiner_tree": steiner_tree_nodes if not anoint else steiner_tree_nodes + [anoint],
+                "aura_nodes": list(aura_nodes) if not anoint else list(aura_nodes) + [anoint],
+                "cost": cost,
+                "anoint": anoint if anoint else 0,
+                "ie": keystone_id,
                 "thread": {},
                 "effect": effect
             })
     return solutions
 
-def find_solutions_with_thread(seed, jewel_type, jewel_id, slot, aura_nodes, effect):
+def find_solutions_with_thread(seed: int, jewel_type: TimelessJewelType, jewel_id: int, slot: int, aura_nodes: list[int], effect: int, anoint: int=None):
     solutions = []
+    aura_nodes = set(aura_nodes) - {anoint} if anoint else set(aura_nodes)
     for thread in threads_for_jewel[jewel_id]:
             passives_in_thread = passives_for_thread[thread["size"]][thread["thread_id"]]
-            thread_nodes = set(passives_in_thread) & set(aura_nodes)
+            thread_nodes = set(passives_in_thread) & aura_nodes
             if len(thread_nodes) >= 2:
+                if anoint:
+                    print("anoint in thread", anoint, thread["thread_id"])
                 remaining_nodes = set(aura_nodes) - passives_in_thread
                 anchor_points=jewel_slots[jewel_type.value][slot]["anchors"] + [thread["thread_id"]]
                 steiner_tree_nodes = get_passives_needed(jewel_id=jewel_id, anchor_points=anchor_points , aura_effect_nodes=remaining_nodes)
@@ -266,10 +274,10 @@ def find_solutions_with_thread(seed, jewel_type, jewel_id, slot, aura_nodes, eff
                     "type": jewel_type.value,
                     "slot": slot,
                     "steiner_tree": steiner_tree_nodes,
-                    "aura_nodes": list(aura_nodes),
+                    "aura_nodes": list(aura_nodes) if not anoint else list(aura_nodes) + [anoint],
                     "cost": cost,
-                    "anoint": [],
-                    "ie": [],
+                    "anoint": 0 if not anoint else anoint,
+                    "ie": 0,
                     "thread": {"size": thread["size"], "thread_id": thread["thread_id"]},
                     "effect": effect
                 })
@@ -277,7 +285,7 @@ def find_solutions_with_thread(seed, jewel_type, jewel_id, slot, aura_nodes, eff
                     print(solutions[-1])
     return solutions
 
-def iteratively_cull_nodes(nodes, effects, min_effect):
+def iteratively_cull_nodes(nodes: list[int], effects: list[int], min_effect: int):
     yield nodes, effects
     for node, effect in zip(nodes, effects):
         culled_nodes = [n for n in nodes if n!=node]
@@ -287,7 +295,7 @@ def iteratively_cull_nodes(nodes, effects, min_effect):
         for n, e in iteratively_cull_nodes(culled_nodes, culled_effects, min_effect):
             yield n, e
 
-def get_worthwhile_passive_combinations(nodes, effects, min_effect):
+def get_worthwhile_passive_combinations(nodes: list[int], effects: list[int], min_effect: int):
     already_seen = set()
     for n, e in iteratively_cull_nodes(nodes, effects, min_effect):
         if tuple(n) not in already_seen:
@@ -317,19 +325,24 @@ def fetch_solutions():
 
 
                 if effect >= min_effect[jewel_type]:
-                    print(jewel_type, slot, seed, effect)
+                    # print(jewel_type, slot, seed, effect)
                     for aura_nodes, effect_values in get_worthwhile_passive_combinations(aura_nodes, effect_values, min_effect[jewel_type]):
                         effect = sum(effect_values)
-                        solutions += find_solution_without_anoint(seed, jewel_type, jewel_id, slot, aura_nodes, effect)
-
+                        solution_without_anoint = find_solution_without_anoint(seed, jewel_type, jewel_id, slot, aura_nodes, effect)
+                        solutions.append(solution_without_anoint)
+                        cost = solution_without_anoint["cost"]
                         if jewel_type == TimelessJewelType.BRUTAL_RESTRAINT:
                             continue
+                        solutions += find_solutions_with_ie(seed, jewel_type, jewel_id, slot, aura_nodes, effect, cost)
 
-                        solutions += find_solutions_with_ie(seed, jewel_type, jewel_id, slot, aura_nodes, effect)
                         solutions += find_solutions_with_thread(seed, jewel_type, jewel_id, slot, aura_nodes, effect)
 
                         if effect >= 36:
-                            solutions += find_solution_with_anoint(seed, jewel_type, jewel_id, slot, aura_nodes, effect)
+                            solutions_with_anoint = find_solutions_with_anoint(seed, jewel_type, jewel_id, slot, aura_nodes, effect)
+                            solutions += solutions_with_anoint
+                            for solution in solutions_with_anoint:
+                                solutions += find_solutions_with_ie(seed, jewel_type, jewel_id, slot, aura_nodes, effect, solution["cost"], solution["anoint"])
+                                solutions += find_solutions_with_thread(seed, jewel_type, jewel_id, slot, aura_nodes, effect, solution["anoint"])
 
 
     with open("data/steiner_solutions.json", "w") as file:
@@ -344,37 +357,40 @@ def get_cutoff(solution):
         return (solution["effect"], 999)
     
 
+def solution_has(solution, anoint, ie, thread):
+    return ((anoint and solution["anoint"]) or (not anoint and not solution["anoint"])) and\
+            ((ie and solution["ie"]) or (not ie and not solution["ie"])) and\
+            ((thread and solution["thread"]) or (not thread and not solution["thread"]))
+
 def clean_up_data():
     with open("data/steiner_solutions.json", "r") as file:
         data = json.loads(file.read())
-    data_dict = {}
+    combinations = list(itertools.product(*[[True, False]]*3))
 
+    data_dict = {}
     for solution in data:
-        # if solution["effect"] / solution["cost"] <= 2:
-        #     continue
         key = (solution["type"],solution["seed"],solution["slot"])
         if key not in data_dict:
             data_dict[key] = []
         data_dict[key].append(solution)
-    solutions = []
-    for v in data_dict.values():
-        cutoffs = [get_cutoff(s) for s in v if not (s["ie"] or s["anoint"])]
-        cutoffs_ie = [get_cutoff(s) for s in v if s["ie"]]
-        cutoffs_anoints = [get_cutoff(s) for s in v if s["anoint"]]
-        for solution in v:
-            if solution["cost"] == 0:
-                print(solution)
-            if solution["ie"]:
-                if any(solution["effect"] <= c[0] and solution["effect"]/solution["cost"] < c[1] for c in cutoffs_ie):
-                    continue
-            if solution["anoint"]:
-                if any(solution["effect"] <= c[0] and solution["effect"]/solution["cost"] < c[1] for c in cutoffs_anoints):
-                    continue
-            if not solution["anoint"] and not solution["ie"]:
-                if any(solution["effect"] <= c[0] and solution["effect"]/solution["cost"] < c[1] for c in cutoffs):
-                    continue
 
-            solutions.append(solution)
+    solutions = []
+    for k, v in data_dict.items():
+        previous_solutions = []
+        cutoffs = {c: [] for c in combinations}
+
+        for anoint, ie, thread in combinations:
+            for solution in v:
+                if solution_has(solution, anoint, ie, thread):
+                    cutoffs[(anoint, ie, thread)].append(get_cutoff(solution))
+
+        for solution in v:
+            cutoff = get_cutoff(solution)
+            for anoint, ie, thread in combinations:
+                if solution_has(solution, anoint, ie, thread) and not any(cutoff[0] <= c[0] and cutoff[1] < c[1] for c in cutoffs[(anoint, ie, thread)]) and not cutoff in previous_solutions:
+                    solutions.append(solution)
+                    previous_solutions.append(cutoff)
+
 
     with open("data/jewel_slots.json", "r") as file:
         jewels = json.loads(file.read())
@@ -391,7 +407,7 @@ def clean_up_data():
     num2slot = sorted(all_slots)
     slot2num = {k: v for v, k in enumerate(num2slot)}
 
-# 
+ 
     compressed_solutions = {}
     compressed_solutions["num2slot"] = num2slot
     compressed_solutions["num2type"] = num2type
@@ -399,13 +415,43 @@ def clean_up_data():
     compressed_solutions["solutions"] = []
 
     for s in solutions:
-
         compressed_solutions["solutions"].append(
-            [s["seed"], type2num[s["type"]], s["effect"], slot2num[s["slot"]], s["steiner_tree"], s["aura_nodes"], s["cost"], s["anoint"][0] if s["anoint"] else 0,  s["ie"][0] if s["ie"] else 0, s["thread"] if s["thread"] else {}]
+            [s["seed"], type2num[s["type"]], s["effect"], slot2num[s["slot"]], s["steiner_tree"], s["aura_nodes"], s["cost"], s["anoint"],  s["ie"], s["thread"] if s["thread"] else {}]
         )
         
     with open("static/compressed_solutions.json", "w") as file:
         file.write(json.dumps(compressed_solutions, separators=(',', ':')))
+
+
+def setup_steiner_solver():
+    with open("one_time_use/steiner_solver/node_mapping.json", "r") as file:
+        node_mapping = json.loads(file.read())
+    stp_string = ""
+    node_count = 0
+    edge_count = 0
+    for node_id, node in tree_data.items():
+        if str(node_id) not in node_mapping:
+            continue
+        node_count += 1
+        for neighbour in node["in"]:
+            if neighbour not in node_mapping:
+                continue
+            stp_string += f"E {node_mapping[neighbour]} {node_mapping[str(node_id)]} 1\n"
+            edge_count += 1
+    stp_string = f"33D32945 STP File, STP Format Version 1.0\nSECTION Graph\nNodes {node_count}\nEdges {edge_count}\n{stp_string}END"
+    with open("one_time_use/steiner_solver/base.stp", "w") as file:
+        file.write(stp_string)
+    
+    with open("one_time_use/steiner_solver/node_mapping", "w") as file:
+        values = [0] * len(node_mapping)
+        for k, v in node_mapping.items():
+            values[v] = str(k)
+        file.write("\n".join(values))
+    #     file.write("\n".join(reverse_mapping))
+
+
+
+         
 
 
 if __name__ == '__main__':
@@ -415,3 +461,4 @@ if __name__ == '__main__':
     # get_relevant_threads_of_hope()
     # fetch_solutions()
     clean_up_data()
+    # setup_steiner_solver()
