@@ -92,3 +92,7 @@ th input {
   width: 30px;
   filter: grayscale(100%);
 }
+
+#filters {
+  display: grid;
+}

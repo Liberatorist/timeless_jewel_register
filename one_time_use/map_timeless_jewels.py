@@ -1,5 +1,7 @@
+from collections import defaultdict
 from enum import Enum
 import io
+import itertools
 import os, stat
 import json
 import math
@@ -311,8 +313,6 @@ def fetch_solutions():
             if jewel_type == TimelessJewelType.BRUTAL_RESTRAINT:
                 passives_in_radius &= {37078, 10835, 3452, 45067, 21602, 65097, 33545, 19506, 44103, 35958, 11730, 27137}
             for seed in seed_ranges[jewel_type]:
-                # if seed != 3450:
-                #     continue
                 aura_nodes = []
                 effect_values = []
                 a = aura_nodes_by_seed[jewel_type.value][str(seed)]
@@ -357,61 +357,40 @@ def get_cutoff(solution):
         return (solution["effect"], 999)
     
 
+def solution_has(solution, anoint, ie, thread):
+    return ((anoint and solution["anoint"]) or (not anoint and not solution["anoint"])) and\
+            ((ie and solution["ie"]) or (not ie and not solution["ie"])) and\
+            ((thread and solution["thread"]) or (not thread and not solution["thread"]))
+
 def clean_up_data():
     with open("data/steiner_solutions.json", "r") as file:
         data = json.loads(file.read())
-    data_dict = {}
+    combinations = list(itertools.product(*[[True, False]]*3))
 
+    data_dict = {}
     for solution in data:
         key = (solution["type"],solution["seed"],solution["slot"])
         if key not in data_dict:
             data_dict[key] = []
         data_dict[key].append(solution)
+
     solutions = []
-    for v in data_dict.values():
-        cutoffs = [get_cutoff(s) for s in v if not (s["ie"] or s["anoint"])]
-        cutoffs_ie = [get_cutoff(s) for s in v if s["ie"] and not s["anoint"]]
-        cutoffs_anoints = [get_cutoff(s) for s in v if s["anoint"] and not s["ie"]  ]
-        cutoffs_anoints_plus_ie = [get_cutoff(s) for s in v if s["anoint"] and s["ie"]]
-        cutoffs_thread = [get_cutoff(s) for s in v if s["thread"]and not s["anoint"]]
-        cutoffs_thread_plus_anoint = [get_cutoff(s) for s in v if s["thread"] and s["anoint"]]
-        ie_solutions = []
-        anoint_solutions = []
-        ie_anoint_solutions = []
-        regular_solutions = []
-        thread_solutions = []
-        thread_anoint_solutions = []
+    for k, v in data_dict.items():
+        previous_solutions = []
+        cutoffs = {c: [] for c in combinations}
+
+        for anoint, ie, thread in combinations:
+            for solution in v:
+                if solution_has(solution, anoint, ie, thread):
+                    cutoffs[(anoint, ie, thread)].append(get_cutoff(solution))
 
         for solution in v:
-            effectiveness = (solution["effect"], solution["effect"]/solution["cost"])
-            if solution["ie"] and not solution["anoint"]:
-                if any(effectiveness[0] <= c[0] and effectiveness[1] < c[1] for c in cutoffs_ie) or effectiveness in ie_solutions:
-                    continue
-                ie_solutions.append(effectiveness)
-                
-            if solution["anoint"] and not solution["ie"]:
-                if any(effectiveness[0] <= c[0] and effectiveness[1] < c[1] for c in cutoffs_anoints ) or effectiveness in anoint_solutions:
-                    continue
-                anoint_solutions.append(effectiveness)
-            if solution["anoint"] and solution["ie"]:
-                if any(effectiveness[0] <= c[0] and effectiveness[1] < c[1] for c in cutoffs_anoints_plus_ie) or effectiveness in ie_anoint_solutions:
-                    continue
-                ie_anoint_solutions.append(effectiveness)
-            if not solution["anoint"] and not solution["ie"]:
-                if any(effectiveness[0] <= c[0] and effectiveness[1] < c[1] for c in cutoffs) or effectiveness in regular_solutions:
-                    continue
-                regular_solutions.append(effectiveness)
-            if solution["thread"] and not solution["anoint"]:
-                if any(effectiveness[0] <= c[0] and effectiveness[1] < c[1] for c in cutoffs_thread) or effectiveness in thread_solutions:
-                    continue
-                thread_solutions.append(effectiveness)
+            cutoff = get_cutoff(solution)
+            for anoint, ie, thread in combinations:
+                if solution_has(solution, anoint, ie, thread) and not any(cutoff[0] <= c[0] and cutoff[1] < c[1] for c in cutoffs[(anoint, ie, thread)]) and not cutoff in previous_solutions:
+                    solutions.append(solution)
+                    previous_solutions.append(cutoff)
 
-            if solution["thread"] and solution["anoint"]:
-                if any(effectiveness[0] <= c[0] and effectiveness[1] < c[1] for c in cutoffs_thread_plus_anoint) or effectiveness in thread_anoint_solutions:
-                    continue
-                thread_anoint_solutions.append(effectiveness)
-
-            solutions.append(solution)
 
     with open("data/jewel_slots.json", "r") as file:
         jewels = json.loads(file.read())
@@ -436,7 +415,6 @@ def clean_up_data():
     compressed_solutions["solutions"] = []
 
     for s in solutions:
-
         compressed_solutions["solutions"].append(
             [s["seed"], type2num[s["type"]], s["effect"], slot2num[s["slot"]], s["steiner_tree"], s["aura_nodes"], s["cost"], s["anoint"],  s["ie"], s["thread"] if s["thread"] else {}]
         )
@@ -449,21 +427,6 @@ def setup_steiner_solver():
     with open("one_time_use/steiner_solver/node_mapping.json", "r") as file:
         node_mapping = json.loads(file.read())
     stp_string = ""
-
-    # mapping = dict()
-    # reverse_mapping = []
-    # node_count = 0
-    # for node_id, node in tree.items():
-    #     if node_id not in mapping:
-    #         mapping[str(node_id)] = node_count
-    #         node_count += 1
-    #         reverse_mapping.append(str(node_id))
-    #     for neighbour in node["in"]:
-    #         if neighbour not in mapping:
-    #             mapping[neighbour] = node_count
-    #             node_count += 1
-    #             reverse_mapping.append(str(neighbour))
-
     node_count = 0
     edge_count = 0
     for node_id, node in tree_data.items():
@@ -496,6 +459,6 @@ if __name__ == '__main__':
     # get_passives_in_radius_of_keystones()
     # get_timeless_node_mapping()
     # get_relevant_threads_of_hope()
-    fetch_solutions()
+    # fetch_solutions()
     clean_up_data()
     # setup_steiner_solver()

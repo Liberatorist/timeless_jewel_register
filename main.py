@@ -13,9 +13,11 @@ with open("static/compressed_solutions.json", "r") as file:
     num2slot = steiner_solutions["num2slot"]
     key_map = {v: idx for idx, v in enumerate(steiner_solutions["keys"])}
     slot2num = {v: k for k, v in enumerate(steiner_solutions["num2slot"])}
-    # solutions = [s for s in steiner_solutions["solutions"] if s[key_map["effect"]] / s[key_map["cost"]] >= 2.5]
-    # solutions = [s for s in steiner_solutions["solutions"] if s[key_map["anoint"]] and s[key_map["thread"]]]
-    solutions = steiner_solutions["solutions"]
+    # add a penalty for having to fit in an Impossible Escape jewel
+    for solution in steiner_solutions["solutions"]:
+        if solution[key_map["ie"]]:
+            solution[key_map["cost"]] += 2
+    solutions = [s for s in steiner_solutions["solutions"] if s[key_map["effect"]] / s[key_map["cost"]] >= 2.5]
 
 
 with open("data/jewel_slots.json", "r") as file:
