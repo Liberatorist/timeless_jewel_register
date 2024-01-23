@@ -1,4 +1,5 @@
 from collections import defaultdict
+from copy import deepcopy
 from enum import Enum
 import io
 import itertools
@@ -262,8 +263,6 @@ def find_solutions_with_thread(seed: int, jewel_type: TimelessJewelType, jewel_i
             passives_in_thread = passives_for_thread[thread["size"]][thread["thread_id"]]
             thread_nodes = set(passives_in_thread) & aura_nodes
             if len(thread_nodes) >= 2:
-                if anoint:
-                    print("anoint in thread", anoint, thread["thread_id"])
                 remaining_nodes = set(aura_nodes) - passives_in_thread
                 anchor_points=jewel_slots[jewel_type.value][slot]["anchors"] + [thread["thread_id"]]
                 steiner_tree_nodes = get_passives_needed(jewel_id=jewel_id, anchor_points=anchor_points , aura_effect_nodes=remaining_nodes)
@@ -308,8 +307,7 @@ def fetch_solutions():
     for jewel_type in [TimelessJewelType.BRUTAL_RESTRAINT, TimelessJewelType.ELEGANT_HUBRIS, TimelessJewelType.GLORIOUS_VANITY]:
         for slot in jewel_slots[jewel_type.value]:
             jewel_id = jewel_slots[jewel_type.value][slot]["jewel_hash"]
-            passives_in_radius = in_jewel_radius[jewel_id]
-
+            passives_in_radius = deepcopy(in_jewel_radius[jewel_id])
             if jewel_type == TimelessJewelType.BRUTAL_RESTRAINT:
                 passives_in_radius &= {37078, 10835, 3452, 45067, 21602, 65097, 33545, 19506, 44103, 35958, 11730, 27137}
             for seed in seed_ranges[jewel_type]:
@@ -323,9 +321,7 @@ def fetch_solutions():
 
                 effect = sum(effect_values)
 
-
                 if effect >= min_effect[jewel_type]:
-                    # print(jewel_type, slot, seed, effect)
                     for aura_nodes, effect_values in get_worthwhile_passive_combinations(aura_nodes, effect_values, min_effect[jewel_type]):
                         effect = sum(effect_values)
                         solution_without_anoint = find_solution_without_anoint(seed, jewel_type, jewel_id, slot, aura_nodes, effect)
@@ -438,7 +434,7 @@ def setup_steiner_solver():
                 continue
             stp_string += f"E {node_mapping[neighbour]} {node_mapping[str(node_id)]} 1\n"
             edge_count += 1
-    stp_string = f"33D32945 STP File, STP Format Version 1.0\nSECTION Graph\nNodes {node_count}\nEdges {edge_count}\n{stp_string}END"
+    stp_string = f"33D32945 STP File, STP Format Version 1.0\nSECTION Graph\nNodes {node_count}\nEdges {edge_count}\n{stp_string}END\n"
     with open("one_time_use/steiner_solver/base.stp", "w") as file:
         file.write(stp_string)
     
@@ -447,7 +443,6 @@ def setup_steiner_solver():
         for k, v in node_mapping.items():
             values[v] = str(k)
         file.write("\n".join(values))
-    #     file.write("\n".join(reverse_mapping))
 
 
 

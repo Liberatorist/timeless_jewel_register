@@ -7,3 +7,4 @@ __pycache__/
 one_time_use/steiner_solver/stp.linux.x86_64.gnu.opt.spx2
 one_time_use/steiner_solver/x.stp
 data/TimelessJewels
+x.stplog
