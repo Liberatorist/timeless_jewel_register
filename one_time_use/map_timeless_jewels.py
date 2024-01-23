@@ -327,13 +327,9 @@ def fetch_solutions():
                         solution_without_anoint = find_solution_without_anoint(seed, jewel_type, jewel_id, slot, aura_nodes, effect)
                         solutions.append(solution_without_anoint)
                         cost = solution_without_anoint["cost"]
-                        if jewel_type == TimelessJewelType.BRUTAL_RESTRAINT:
-                            continue
-                        solutions += find_solutions_with_ie(seed, jewel_type, jewel_id, slot, aura_nodes, effect, cost)
-
-                        solutions += find_solutions_with_thread(seed, jewel_type, jewel_id, slot, aura_nodes, effect)
-
                         if effect >= 36:
+                            solutions += find_solutions_with_thread(seed, jewel_type, jewel_id, slot, aura_nodes, effect)
+                            solutions += find_solutions_with_ie(seed, jewel_type, jewel_id, slot, aura_nodes, effect, cost)
                             solutions_with_anoint = find_solutions_with_anoint(seed, jewel_type, jewel_id, slot, aura_nodes, effect)
                             solutions += solutions_with_anoint
                             for solution in solutions_with_anoint:
@@ -454,6 +450,6 @@ if __name__ == '__main__':
     # get_passives_in_radius_of_keystones()
     # get_timeless_node_mapping()
     # get_relevant_threads_of_hope()
-    # fetch_solutions()
+    fetch_solutions()
     clean_up_data()
     # setup_steiner_solver()

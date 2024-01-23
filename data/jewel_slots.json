@@ -27,20 +27,20 @@
     "Iron Will": {
       "jewel_hash": 6230,
       "anchors": [
-        55373,
-        15144,
-        51923
+        58833,
+        51923,
+        51786
       ],
-      "normal_pathing_cost": 8
+      "normal_pathing_cost": 10
     },
     "Iron Grip": {
       "jewel_hash": 31683,
       "anchors": [
-        48828,
-        15144,
-        24496
+        58833,
+        24496,
+        18033
       ],
-      "normal_pathing_cost": 8
+      "normal_pathing_cost": 9
     },
     "Runebinder": {
       "jewel_hash": 26196,
@@ -148,16 +148,20 @@
     "Iron Will": {
       "jewel_hash": 6230,
       "anchors": [
-        55373
+        58833,
+        51923,
+        51786
       ],
-      "normal_pathing_cost": 0
+      "normal_pathing_cost": 10
     },
     "Iron Grip": {
       "jewel_hash": 31683,
       "anchors": [
-        48828
+        58833,
+        24496,
+        18033
       ],
-      "normal_pathing_cost": 0
+      "normal_pathing_cost": 9
     },
     "Runebinder": {
       "jewel_hash": 26196,
